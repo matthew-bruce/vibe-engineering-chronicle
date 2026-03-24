@@ -432,7 +432,7 @@ function CaptureView({ entries, onAdd, onDelete, onPromote }) {
       <div className="cap-input-area">
         <div style={{marginBottom:8}}>
           <div className="form-label">Capture a thought, quote, or insight</div>
-          <textarea className="form-textarea" placeholder='"The best code is the code you didn\'t write." — or your own observation, link, or idea...' value={form.text} onChange={e=>f('text',e.target.value)} style={{minHeight:72}} />
+          <textarea className="form-textarea" placeholder={'"The best code is the code you didn\'t write." — or your own observation, link, or idea...'} value={form.text} onChange={e=>f('text',e.target.value)} style={{minHeight:72}} />
         </div>
         <div style={{display:'flex',gap:8,alignItems:'center'}}>
           <input className="form-input" placeholder="Source / attribution (optional)" value={form.source} onChange={e=>f('source',e.target.value)} style={{flex:1}} />
