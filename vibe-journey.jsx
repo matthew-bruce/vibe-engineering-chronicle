@@ -503,8 +503,23 @@ export default function App() {
   const [filterCat, setFilterCat] = useState('all');
 
   useEffect(() => {
-    try { const r = localStorage.getItem(STORAGE.tl); setTl(r ? JSON.parse(r) : SEED_DATA.tl); } catch { setTl(SEED_DATA.tl); }
-    try { const r = localStorage.getItem(STORAGE.cap); setCap(r ? JSON.parse(r) : SEED_DATA.cap); } catch { setCap(SEED_DATA.cap); }
+    const load = (key, seed) => {
+      try {
+        const raw = localStorage.getItem(key);
+        const parsed = raw ? JSON.parse(raw) : null;
+        if (parsed && parsed.length > 0) {
+          console.log(`[Chronicle] ${key}: loaded ${parsed.length} entries from localStorage`);
+          return parsed;
+        }
+        console.log(`[Chronicle] ${key}: localStorage was ${parsed ? 'empty []' : 'null'} — applying seed (${seed.length} entries)`);
+        return seed;
+      } catch (e) {
+        console.log(`[Chronicle] ${key}: parse error (${e.message}) — applying seed`);
+        return seed;
+      }
+    };
+    setTl(load(STORAGE.tl, SEED_DATA.tl));
+    setCap(load(STORAGE.cap, SEED_DATA.cap));
     setReady(true);
   }, []);
 
