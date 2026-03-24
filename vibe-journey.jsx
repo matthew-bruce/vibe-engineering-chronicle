@@ -480,15 +480,13 @@ export default function App() {
   const [filterCat, setFilterCat] = useState('all');
 
   useEffect(() => {
-    (async () => {
-      try { const r = await window.storage.get(STORAGE.tl); if (r) setTl(JSON.parse(r.value)); } catch {}
-      try { const r = await window.storage.get(STORAGE.cap); if (r) setCap(JSON.parse(r.value)); } catch {}
-      setReady(true);
-    })();
+    try { const r = localStorage.getItem(STORAGE.tl); if (r) setTl(JSON.parse(r)); } catch {}
+    try { const r = localStorage.getItem(STORAGE.cap); if (r) setCap(JSON.parse(r)); } catch {}
+    setReady(true);
   }, []);
 
-  useEffect(() => { if (ready) window.storage.set(STORAGE.tl, JSON.stringify(tl)).catch(()=>{}); }, [tl, ready]);
-  useEffect(() => { if (ready) window.storage.set(STORAGE.cap, JSON.stringify(cap)).catch(()=>{}); }, [cap, ready]);
+  useEffect(() => { if (ready) { try { localStorage.setItem(STORAGE.tl, JSON.stringify(tl)); } catch {} } }, [tl, ready]);
+  useEffect(() => { if (ready) { try { localStorage.setItem(STORAGE.cap, JSON.stringify(cap)); } catch {} } }, [cap, ready]);
 
   const addTl = useCallback(entry => setTl(p => [...p, entry]), []);
   const delTl = useCallback(id => setTl(p => p.filter(e => e.id !== id)), []);
