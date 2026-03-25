@@ -190,6 +190,17 @@ html,body,#root { height:100%; background:var(--bg); color:var(--text); font-fam
   font-family:var(--ff-body); transition:all 0.15s;
 }
 .theme-chip.selected { color:#000 !important; font-weight:600; }
+/* BENEFIT */
+.tl-benefit {
+  margin-top:10px; padding:8px 12px; border-radius:6px;
+  background:rgba(201,169,110,0.08); border-left:3px solid var(--accent);
+}
+.tl-benefit-label {
+  font-family:var(--ff-mono); font-size:10px; color:var(--muted2);
+  text-transform:uppercase; letter-spacing:0.08em; margin-bottom:3px;
+}
+.tl-benefit-text { font-size:13px; color:var(--accent); line-height:1.4; }
+
 .theme-pills { display:flex; gap:4px; flex-wrap:wrap; margin-top:6px; }
 .theme-pill {
   font-size:10px; font-weight:600; padding:2px 7px; border-radius:3px;
@@ -356,13 +367,13 @@ function PresentMode({ entries, startIndex, onClose }) {
 
 function TimelineView({ entries, allCount, filterCat, setFilterCat, onAdd, onDelete }) {
   const [show, setShow] = useState(false);
-  const [form, setForm] = useState({ title:'', body:'', date:today(), category:'wow', themes:[] });
+  const [form, setForm] = useState({ title:'', body:'', date:today(), category:'wow', themes:[], benefit:'' });
   const f = (k, v) => setForm(p => ({...p, [k]:v}));
 
   const submit = () => {
     if (!form.title.trim()) return;
     onAdd({...form, id:uid(), createdAt:Date.now()});
-    setForm({ title:'', body:'', date:today(), category:'wow', themes:[] });
+    setForm({ title:'', body:'', date:today(), category:'wow', themes:[], benefit:'' });
     setShow(false);
   };
 
@@ -419,6 +430,10 @@ function TimelineView({ entries, allCount, filterCat, setFilterCat, onAdd, onDel
                 ))}
               </div>
             </div>
+            <div className="form-grid-full">
+              <div className="form-label">Benefit / so what? <span style={{opacity:0.5,fontWeight:400}}>(optional)</span></div>
+              <input className="form-input" placeholder="e.g. Saves 6 weeks of procurement time per tool" value={form.benefit} onChange={e=>f('benefit',e.target.value)} />
+            </div>
           </div>
           <div className="form-actions">
             <button className="btn btn-ghost" onClick={() => setShow(false)}>Cancel</button>
@@ -468,6 +483,12 @@ function TimelineView({ entries, allCount, filterCat, setFilterCat, onAdd, onDel
                       {(e.themes||[]).map(id => { const t = THEMES.find(x=>x.id===id); return t ? (
                         <span key={id} className="theme-pill" style={{background:t.color+'22',color:t.color}}>{t.label}</span>
                       ) : null; })}
+                    </div>
+                  )}
+                  {e.benefit && (
+                    <div className="tl-benefit">
+                      <div className="tl-benefit-label">Benefit</div>
+                      <div className="tl-benefit-text">{e.benefit}</div>
                     </div>
                   )}
                 </div>
