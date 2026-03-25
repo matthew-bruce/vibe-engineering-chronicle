@@ -1,5 +1,6 @@
 import { useState, useEffect, useCallback } from "react";
 import {
+  initLookups,
   loadTimeline, loadCaptures, loadSessions,
   addTimelineEntry, softDeleteCard, addCapture,
   addSession, updateSession, softDeleteSession,
@@ -876,6 +877,7 @@ export default function App() {
   useEffect(() => {
     async function boot() {
       try {
+        await initLookups();
         const [tlData, capData, sesData] = await Promise.all([
           loadTimeline(),
           loadCaptures(),
