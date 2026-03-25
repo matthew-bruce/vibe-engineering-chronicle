@@ -1021,7 +1021,7 @@ export default function App() {
 
   const sorted = [...tl]
     .filter(e => filterCat === 'all' || e.category === filterCat)
-    .sort((a,b) => new Date(a.date) - new Date(b.date));
+    .sort((a,b) => new Date(b.date) - new Date(a.date));
 
   const allSorted = [...tl].sort((a,b) => new Date(a.date) - new Date(b.date));
   const presentFiltered = allSorted.filter(e => {
