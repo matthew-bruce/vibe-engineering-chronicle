@@ -7,6 +7,7 @@ const CATS = {
   wow:        { label: 'Wow Moment',        color: '#B07FE8', glyph: '✦' },
   aspiration: { label: 'Aspiration / Goal', color: '#E86161', glyph: '◎' },
   ideas:      { label: 'Idea / Wishlist',   color: '#A78BFA', glyph: '◐' },
+  session:    { label: 'Session',           color: '#34D4D4', glyph: '◷' },
 };
 
 const THEMES = [
@@ -32,10 +33,15 @@ const PROJECTS = [
 
 const minsToHours = m => {
   const n = Number(m) || 0;
-  const h = Math.floor(n / 60);
-  const r = n % 60;
-  if (h === 0) return `${r}m`;
-  return r > 0 ? `${h}h ${r}m` : `${h}h`;
+  const d = Math.floor(n / 1440);
+  const rem = n % 1440;
+  const h = Math.floor(rem / 60);
+  const r = rem % 60;
+  const parts = [];
+  if (d) parts.push(`${d}d`);
+  if (h) parts.push(`${h}h`);
+  if (r || parts.length === 0) parts.push(`${r}m`);
+  return parts.join(' ');
 };
 
 const uid = () => Date.now().toString(36) + Math.random().toString(36).slice(2, 5);
@@ -367,16 +373,23 @@ html,body,#root { height:100%; background:var(--bg); color:var(--text); font-fam
 .ses-project-hrs { font-family:var(--ff-mono); font-size:22px; font-weight:600; color:var(--accent); line-height:1; }
 .ses-project-unit { font-family:var(--ff-mono); font-size:10px; color:var(--muted); text-transform:uppercase; letter-spacing:0.1em; margin-top:2px; }
 .ses-add-card { background:var(--s1); border:1px solid var(--border2); border-radius:10px; padding:16px; margin-bottom:24px; }
-.ses-form-grid { display:grid; grid-template-columns:2fr 1fr 1fr; gap:10px; margin-bottom:10px; }
-.ses-form-notes { display:flex; gap:8px; align-items:center; }
+.ses-form-grid { display:grid; grid-template-columns:2fr 1fr; gap:10px; margin-bottom:10px; }
+.ses-dur-row { display:grid; grid-template-columns:1fr 1fr 1fr; gap:8px; margin-bottom:10px; }
+.ses-form-footer { display:flex; gap:8px; align-items:center; }
+.ses-form-notes { display:flex; gap:8px; align-items:center; flex:1; }
+.ses-toggle { display:flex; align-items:center; gap:6px; font-size:12px; color:var(--muted2); cursor:pointer; white-space:nowrap; user-select:none; }
+.ses-toggle input { cursor:pointer; accent-color:var(--accent); }
 .ses-list { display:flex; flex-direction:column; gap:8px; }
 .ses-item { background:var(--s1); border:1px solid var(--border); border-radius:8px; padding:11px 16px; display:grid; grid-template-columns:auto auto auto 1fr auto; align-items:center; gap:14px; }
 .ses-item-project { font-size:13px; font-weight:500; white-space:nowrap; }
 .ses-item-date { font-family:var(--ff-mono); font-size:11px; color:var(--muted2); white-space:nowrap; }
 .ses-item-dur { font-family:var(--ff-mono); font-size:13px; font-weight:600; color:var(--accent); white-space:nowrap; }
 .ses-item-notes { font-size:12px; color:var(--muted2); font-style:italic; overflow:hidden; text-overflow:ellipsis; white-space:nowrap; }
-.ses-item-del { opacity:0; transition:opacity 0.15s; }
-.ses-item:hover .ses-item-del { opacity:1; }
+.ses-item-actions { display:flex; gap:4px; align-items:center; opacity:0; transition:opacity 0.15s; }
+.ses-item:hover .ses-item-actions { opacity:1; }
+.ses-item-editing { display:block !important; padding:14px 16px; }
+.ses-edit-row { display:grid; grid-template-columns:2fr 1fr; gap:10px; margin-bottom:10px; }
+.ses-edit-footer { display:flex; justify-content:flex-end; gap:8px; margin-top:4px; }
 `;
 
 
@@ -649,14 +662,50 @@ function CaptureView({ entries, onAdd, onDelete, onPromote }) {
 
 // ─── Sessions View ────────────────────────────────────────────────────────────
 
-function SessionsView({ sessions, onAdd, onDelete }) {
-  const [form, setForm] = useState({ project: PROJECTS[0], date: today(), durationMins: '', notes: '' });
+const durToMins = (d, h, m) => (Number(d)||0)*1440 + (Number(h)||0)*60 + (Number(m)||0);
+
+function SessionsView({ sessions, onAdd, onUpdate, onDelete, onAddTl }) {
+  const blankForm = { project: PROJECTS[0], date: today(), durD: '', durH: '', durM: '', notes: '', addToTl: false };
+  const [form, setForm] = useState(blankForm);
   const f = (k, v) => setForm(p => ({...p, [k]: v}));
 
+  const [editId, setEditId] = useState(null);
+  const [editForm, setEditForm] = useState({});
+  const ef = (k, v) => setEditForm(p => ({...p, [k]: v}));
+  const [confirmDel, setConfirmDel] = useState(null);
+
+  const startEdit = s => {
+    const total = Number(s.durationMins) || 0;
+    const d = Math.floor(total / 1440);
+    const rem = total % 1440;
+    const h = Math.floor(rem / 60);
+    const m = rem % 60;
+    setEditForm({ project: s.project, date: s.date, durD: d||'', durH: h||'', durM: m||'', notes: s.notes||'' });
+    setEditId(s.id);
+    setConfirmDel(null);
+  };
+
+  const saveEdit = id => {
+    const mins = durToMins(editForm.durD, editForm.durH, editForm.durM);
+    if (mins <= 0) return;
+    onUpdate(id, { project: editForm.project, date: editForm.date, durationMins: mins, notes: editForm.notes });
+    setEditId(null);
+  };
+
   const submit = () => {
-    if (!form.durationMins || Number(form.durationMins) <= 0) return;
-    onAdd({ ...form, durationMins: Number(form.durationMins), id: uid(), createdAt: Date.now() });
-    setForm({ project: PROJECTS[0], date: today(), durationMins: '', notes: '' });
+    const mins = durToMins(form.durD, form.durH, form.durM);
+    if (mins <= 0) return;
+    const entry = { project: form.project, date: form.date, durationMins: mins, notes: form.notes, id: uid(), createdAt: Date.now() };
+    onAdd(entry);
+    if (form.addToTl) {
+      onAddTl({
+        id: uid(), date: form.date, category: 'session',
+        title: form.project,
+        body: minsToHours(mins) + (form.notes ? ' — ' + form.notes : ''),
+        themes: [], createdAt: Date.now(),
+      });
+    }
+    setForm(blankForm);
   };
 
   const totalMins = sessions.reduce((s, x) => s + (Number(x.durationMins) || 0), 0);
@@ -699,13 +748,29 @@ function SessionsView({ sessions, onAdd, onDelete }) {
             <div className="form-label">Date</div>
             <input className="form-input" type="date" value={form.date} onChange={e => f('date', e.target.value)} />
           </div>
+        </div>
+        <div className="ses-dur-row">
           <div>
-            <div className="form-label">Duration (mins)</div>
-            <input className="form-input" type="number" min="1" placeholder="e.g. 90" value={form.durationMins} onChange={e => f('durationMins', e.target.value)} />
+            <div className="form-label">Days</div>
+            <input className="form-input" type="number" min="0" placeholder="0" value={form.durD} onChange={e => f('durD', e.target.value)} />
+          </div>
+          <div>
+            <div className="form-label">Hours</div>
+            <input className="form-input" type="number" min="0" max="23" placeholder="0" value={form.durH} onChange={e => f('durH', e.target.value)} />
+          </div>
+          <div>
+            <div className="form-label">Minutes</div>
+            <input className="form-input" type="number" min="0" max="59" placeholder="0" value={form.durM} onChange={e => f('durM', e.target.value)} />
           </div>
         </div>
-        <div className="ses-form-notes">
-          <input className="form-input" placeholder="Notes (optional)" value={form.notes} onChange={e => f('notes', e.target.value)} style={{flex:1}} />
+        <div className="ses-form-footer">
+          <div className="ses-form-notes">
+            <input className="form-input" placeholder="Notes (optional)" value={form.notes} onChange={e => f('notes', e.target.value)} style={{flex:1}} />
+          </div>
+          <label className="ses-toggle">
+            <input type="checkbox" checked={form.addToTl} onChange={e => f('addToTl', e.target.checked)} />
+            Add to Timeline
+          </label>
           <button className="btn btn-primary" onClick={submit}>Log →</button>
         </div>
       </div>
@@ -715,13 +780,57 @@ function SessionsView({ sessions, onAdd, onDelete }) {
 
       {sorted.length > 0 && (
         <div className="ses-list">
-          {sorted.map(s => (
+          {sorted.map(s => editId === s.id ? (
+            <div className="ses-item ses-item-editing" key={s.id}>
+              <div className="ses-edit-row">
+                <div>
+                  <div className="form-label">Project</div>
+                  <select className="form-select" value={editForm.project} onChange={e => ef('project', e.target.value)}>
+                    {PROJECTS.map(p => <option key={p} value={p}>{p}</option>)}
+                  </select>
+                </div>
+                <div>
+                  <div className="form-label">Date</div>
+                  <input className="form-input" type="date" value={editForm.date} onChange={e => ef('date', e.target.value)} />
+                </div>
+              </div>
+              <div className="ses-dur-row">
+                <div>
+                  <div className="form-label">Days</div>
+                  <input className="form-input" type="number" min="0" placeholder="0" value={editForm.durD} onChange={e => ef('durD', e.target.value)} />
+                </div>
+                <div>
+                  <div className="form-label">Hours</div>
+                  <input className="form-input" type="number" min="0" max="23" placeholder="0" value={editForm.durH} onChange={e => ef('durH', e.target.value)} />
+                </div>
+                <div>
+                  <div className="form-label">Minutes</div>
+                  <input className="form-input" type="number" min="0" max="59" placeholder="0" value={editForm.durM} onChange={e => ef('durM', e.target.value)} />
+                </div>
+              </div>
+              <input className="form-input" placeholder="Notes (optional)" value={editForm.notes} onChange={e => ef('notes', e.target.value)} style={{marginBottom:10}} />
+              <div className="ses-edit-footer">
+                <button className="btn btn-ghost btn-sm" onClick={() => setEditId(null)}>Cancel</button>
+                <button className="btn btn-primary btn-sm" onClick={() => saveEdit(s.id)}>Save</button>
+              </div>
+            </div>
+          ) : (
             <div className="ses-item" key={s.id}>
               <span className="ses-item-project">{s.project}</span>
               <span className="ses-item-date">{fmtDate(s.date)}</span>
               <span className="ses-item-dur">{minsToHours(s.durationMins)}</span>
               <span className="ses-item-notes">{s.notes || '—'}</span>
-              <button className="btn btn-ghost btn-sm btn-icon ses-item-del" onClick={() => onDelete(s.id)}>✕</button>
+              <div className="ses-item-actions">
+                <button className="btn btn-ghost btn-sm btn-icon" onClick={() => startEdit(s)} title="Edit">✎</button>
+                {confirmDel === s.id ? (
+                  <>
+                    <button className="btn btn-ghost btn-sm" style={{color:'#E86161',fontSize:11}} onClick={() => { onDelete(s.id); setConfirmDel(null); }}>Confirm?</button>
+                    <button className="btn btn-ghost btn-sm btn-icon" onClick={() => setConfirmDel(null)}>✕</button>
+                  </>
+                ) : (
+                  <button className="btn btn-ghost btn-sm btn-icon" onClick={() => setConfirmDel(s.id)} title="Delete">🗑</button>
+                )}
+              </div>
             </div>
           ))}
         </div>
@@ -777,6 +886,7 @@ export default function App() {
   const delCap = useCallback(id => setCap(p => p.filter(e => e.id !== id)), []);
   const addSes = useCallback(entry => setSessions(p => [...p, entry]), []);
   const delSes = useCallback(id => setSessions(p => p.filter(s => s.id !== id)), []);
+  const updateSes = useCallback((id, fields) => setSessions(p => p.map(s => s.id === id ? {...s, ...fields} : s)), []);
 
   const promote = useCallback((cap) => {
     // Moves a capture to the timeline with pre-filled form
@@ -901,7 +1011,9 @@ export default function App() {
             <SessionsView
               sessions={sessions}
               onAdd={addSes}
+              onUpdate={updateSes}
               onDelete={delSes}
+              onAddTl={addTl}
             />
           ) : (
             <CaptureView
