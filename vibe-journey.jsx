@@ -22,11 +22,27 @@ const THEMES = [
 const toggleTheme = (themes, id) =>
   themes.includes(id) ? themes.filter(t => t !== id) : [...themes, id];
 
+const PROJECTS = [
+  'Dispatch (PI Planning Tool)',
+  'Platform Org Structure',
+  'Platform Roadmapping Tool',
+  'Vibe Engineering Chronicle',
+  'Vibe Engineering Strategy',
+];
+
+const minsToHours = m => {
+  const n = Number(m) || 0;
+  const h = Math.floor(n / 60);
+  const r = n % 60;
+  if (h === 0) return `${r}m`;
+  return r > 0 ? `${h}h ${r}m` : `${h}h`;
+};
+
 const uid = () => Date.now().toString(36) + Math.random().toString(36).slice(2, 5);
 const fmtDate = d => new Date(d + 'T00:00:00').toLocaleDateString('en-GB', { day: 'numeric', month: 'short', year: 'numeric' });
 const today = () => new Date().toISOString().slice(0, 10);
 
-const STORAGE = { tl: 'vj-timeline-v1', cap: 'vj-capture-v1' };
+const STORAGE = { tl: 'vj-timeline-v1', cap: 'vj-capture-v1', ses: 'vj-sessions-v1' };
 
 const SEED_DATA = {
   tl: [
@@ -314,7 +330,30 @@ html,body,#root { height:100%; background:var(--bg); color:var(--text); font-fam
 .present-hint { font-family:var(--ff-mono); font-size:11px; color:var(--muted); }
 
 .divider { border:none; border-top:1px solid var(--border); margin:20px 0; }
+
+/* SESSIONS */
+.ses-overview { display:flex; align-items:flex-start; justify-content:space-between; margin-bottom:20px; flex-wrap:wrap; gap:16px; }
+.ses-grand-total { text-align:right; }
+.ses-grand-hrs { font-family:var(--ff-display); font-size:36px; font-weight:700; color:var(--accent); line-height:1; }
+.ses-grand-label { font-family:var(--ff-mono); font-size:10px; color:var(--muted); text-transform:uppercase; letter-spacing:0.1em; margin-top:3px; }
+.ses-projects-grid { display:grid; grid-template-columns:repeat(auto-fill,minmax(185px,1fr)); gap:10px; margin-bottom:24px; }
+.ses-project-card { background:var(--s1); border:1px solid var(--border); border-radius:8px; padding:14px; }
+.ses-project-name { font-size:12px; color:var(--muted2); line-height:1.3; margin-bottom:8px; }
+.ses-project-hrs { font-family:var(--ff-mono); font-size:22px; font-weight:600; color:var(--accent); line-height:1; }
+.ses-project-unit { font-family:var(--ff-mono); font-size:10px; color:var(--muted); text-transform:uppercase; letter-spacing:0.1em; margin-top:2px; }
+.ses-add-card { background:var(--s1); border:1px solid var(--border2); border-radius:10px; padding:16px; margin-bottom:24px; }
+.ses-form-grid { display:grid; grid-template-columns:2fr 1fr 1fr; gap:10px; margin-bottom:10px; }
+.ses-form-notes { display:flex; gap:8px; align-items:center; }
+.ses-list { display:flex; flex-direction:column; gap:8px; }
+.ses-item { background:var(--s1); border:1px solid var(--border); border-radius:8px; padding:11px 16px; display:grid; grid-template-columns:auto auto auto 1fr auto; align-items:center; gap:14px; }
+.ses-item-project { font-size:13px; font-weight:500; white-space:nowrap; }
+.ses-item-date { font-family:var(--ff-mono); font-size:11px; color:var(--muted2); white-space:nowrap; }
+.ses-item-dur { font-family:var(--ff-mono); font-size:13px; font-weight:600; color:var(--accent); white-space:nowrap; }
+.ses-item-notes { font-size:12px; color:var(--muted2); font-style:italic; overflow:hidden; text-overflow:ellipsis; white-space:nowrap; }
+.ses-item-del { opacity:0; transition:opacity 0.15s; }
+.ses-item:hover .ses-item-del { opacity:1; }
 `;
+
 
 // ─── Presentation Mode ────────────────────────────────────────────────────────
 
@@ -583,12 +622,96 @@ function CaptureView({ entries, onAdd, onDelete, onPromote }) {
   );
 }
 
+// ─── Sessions View ────────────────────────────────────────────────────────────
+
+function SessionsView({ sessions, onAdd, onDelete }) {
+  const [form, setForm] = useState({ project: PROJECTS[0], date: today(), durationMins: '', notes: '' });
+  const f = (k, v) => setForm(p => ({...p, [k]: v}));
+
+  const submit = () => {
+    if (!form.durationMins || Number(form.durationMins) <= 0) return;
+    onAdd({ ...form, durationMins: Number(form.durationMins), id: uid(), createdAt: Date.now() });
+    setForm({ project: PROJECTS[0], date: today(), durationMins: '', notes: '' });
+  };
+
+  const totalMins = sessions.reduce((s, x) => s + (Number(x.durationMins) || 0), 0);
+  const minsFor = p => sessions.filter(s => s.project === p).reduce((s, x) => s + (Number(x.durationMins) || 0), 0);
+  const sorted = [...sessions].sort((a, b) => b.createdAt - a.createdAt);
+
+  return (
+    <div>
+      <div className="ses-overview">
+        <div>
+          <div className="section-eyebrow">Sessions</div>
+          <span className="tl-count">{sessions.length} {sessions.length === 1 ? 'session' : 'sessions'} logged</span>
+        </div>
+        <div className="ses-grand-total">
+          <div className="ses-grand-hrs">{minsToHours(totalMins)}</div>
+          <div className="ses-grand-label">Total across all projects</div>
+        </div>
+      </div>
+
+      <div className="ses-projects-grid">
+        {PROJECTS.map(p => (
+          <div className="ses-project-card" key={p}>
+            <div className="ses-project-name">{p}</div>
+            <div className="ses-project-hrs">{minsToHours(minsFor(p))}</div>
+            <div className="ses-project-unit">logged</div>
+          </div>
+        ))}
+      </div>
+
+      <div className="ses-add-card">
+        <div className="section-eyebrow" style={{marginBottom:12}}>Log a session</div>
+        <div className="ses-form-grid">
+          <div>
+            <div className="form-label">Project</div>
+            <select className="form-select" value={form.project} onChange={e => f('project', e.target.value)}>
+              {PROJECTS.map(p => <option key={p} value={p}>{p}</option>)}
+            </select>
+          </div>
+          <div>
+            <div className="form-label">Date</div>
+            <input className="form-input" type="date" value={form.date} onChange={e => f('date', e.target.value)} />
+          </div>
+          <div>
+            <div className="form-label">Duration (mins)</div>
+            <input className="form-input" type="number" min="1" placeholder="e.g. 90" value={form.durationMins} onChange={e => f('durationMins', e.target.value)} />
+          </div>
+        </div>
+        <div className="ses-form-notes">
+          <input className="form-input" placeholder="Notes (optional)" value={form.notes} onChange={e => f('notes', e.target.value)} style={{flex:1}} />
+          <button className="btn btn-primary" onClick={submit}>Log →</button>
+        </div>
+      </div>
+
+      <hr className="divider" />
+      <div className="section-eyebrow">{sorted.length > 0 ? 'All sessions — newest first' : 'No sessions logged yet'}</div>
+
+      {sorted.length > 0 && (
+        <div className="ses-list">
+          {sorted.map(s => (
+            <div className="ses-item" key={s.id}>
+              <span className="ses-item-project">{s.project}</span>
+              <span className="ses-item-date">{fmtDate(s.date)}</span>
+              <span className="ses-item-dur">{minsToHours(s.durationMins)}</span>
+              <span className="ses-item-notes">{s.notes || '—'}</span>
+              <button className="btn btn-ghost btn-sm btn-icon ses-item-del" onClick={() => onDelete(s.id)}>✕</button>
+            </div>
+          ))}
+        </div>
+      )}
+    </div>
+  );
+}
+
 // ─── Root App ─────────────────────────────────────────────────────────────────
 
 export default function App() {
   const [tab, setTab] = useState('timeline');
   const [tl, setTl] = useState([]);
   const [cap, setCap] = useState([]);
+  const [sessions, setSessions] = useState([]);
   const [ready, setReady] = useState(false);
   const [presenting, setPresenting] = useState(false);
   const [filterCat, setFilterCat] = useState('all');
@@ -611,16 +734,20 @@ export default function App() {
     };
     setTl(load(STORAGE.tl, SEED_DATA.tl));
     setCap(load(STORAGE.cap, SEED_DATA.cap));
+    setSessions(load(STORAGE.ses, []));
     setReady(true);
   }, []);
 
   useEffect(() => { if (ready) { try { localStorage.setItem(STORAGE.tl, JSON.stringify(tl)); } catch {} } }, [tl, ready]);
   useEffect(() => { if (ready) { try { localStorage.setItem(STORAGE.cap, JSON.stringify(cap)); } catch {} } }, [cap, ready]);
+  useEffect(() => { if (ready) { try { localStorage.setItem(STORAGE.ses, JSON.stringify(sessions)); } catch {} } }, [sessions, ready]);
 
   const addTl = useCallback(entry => setTl(p => [...p, entry]), []);
   const delTl = useCallback(id => setTl(p => p.filter(e => e.id !== id)), []);
   const addCap = useCallback(entry => setCap(p => [entry, ...p]), []);
   const delCap = useCallback(id => setCap(p => p.filter(e => e.id !== id)), []);
+  const addSes = useCallback(entry => setSessions(p => [...p, entry]), []);
+  const delSes = useCallback(id => setSessions(p => p.filter(s => s.id !== id)), []);
 
   const promote = useCallback((cap) => {
     // Moves a capture to the timeline with pre-filled form
@@ -664,6 +791,7 @@ export default function App() {
             )}
             <div className="tabs">
               <button className={`tab ${tab==='timeline'?'on':''}`} onClick={() => setTab('timeline')}>Timeline</button>
+              <button className={`tab ${tab==='sessions'?'on':''}`} onClick={() => setTab('sessions')}>Sessions</button>
               <button className={`tab ${tab==='capture'?'on':''}`} onClick={() => setTab('capture')}>
                 Capture {cap.length > 0 && <span className="badge">{cap.length}</span>}
               </button>
@@ -679,6 +807,12 @@ export default function App() {
               setFilterCat={setFilterCat}
               onAdd={addTl}
               onDelete={delTl}
+            />
+          ) : tab === 'sessions' ? (
+            <SessionsView
+              sessions={sessions}
+              onAdd={addSes}
+              onDelete={delSes}
             />
           ) : (
             <CaptureView
