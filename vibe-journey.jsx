@@ -71,6 +71,12 @@ const SEED_DATA = {
     { id: 'seed-cap-3', createdAt: new Date('2026-03-24').getTime(), text: 'A man with no medical background used AI to design a personalised mRNA cancer vaccine for his dog Rosie — and it appears to be working. First personalised cancer vaccine ever designed for a dog. Built in under two months using ChatGPT, AlphaFold and Grok, with UNSW researchers. Tumour shrank ~75%.',                                                                                                                                       source: 'Paul Conyngham / The Australian / Fortune, Mar 2026' },
     { id: 'seed-cap-4', createdAt: new Date('2026-03-24').getTime(), text: 'AI strategist Sammy Azdoufal used Claude Code to reverse engineer his DJI Romo vacuum\'s protocol so he could drive it with a PS5 controller. He accidentally gained access to ~7,000 strangers\' vacuums across 24 countries — live camera feeds, microphones, floor plans. He reported it responsibly. The tool he used: Claude Code.',                                                                                                      source: "Tom's Hardware / The Verge / Fortune, Feb 2026" },
   ],
+  ses: [
+    { id: 'seed-ses-1', project: 'Platform Roadmapping Tool', date: '2026-03-03', durationMins: 420,  notes: "Work to date on Platform Roadmapping Tool (approx.) which got us an initial two variants on ChatGPT Codex, then we moved to Claude for a re-write and it's much better, but still a way to go before a workable PoC.", createdAt: new Date('2026-03-03').getTime() },
+    { id: 'seed-ses-2', project: 'Platform Org Structure',    date: '2026-03-04', durationMins: 360,  notes: 'Work to date on Platform Org Structure (approx.) which has got us nearly to the point where the structure works and the drag/drop is reliable. Needs another 1-2 sessions to get to a working PoC.',                       createdAt: new Date('2026-03-04').getTime() },
+    { id: 'seed-ses-3', project: 'Dispatch (PI Planning Tool)',date: '2026-03-19', durationMins: 1500, notes: 'Work to date on Dispatch (approx.) which has got it to well beyond a PoC stage, with a working import function, canonical data layer, and completed features including Sorting Frame and Dashboard.',                        createdAt: new Date('2026-03-19').getTime() },
+    { id: 'seed-ses-4', project: 'Vibe Engineering Chronicle', date: '2026-03-24', durationMins: 120,  notes: 'Created the concept of Chronicle to show a basic timeline of my journey into Vibe Engineering, as a way to capture WOW moments, key learnings, project ideas, tooling decisions etc. with the aim that I use it to help organise my thoughts and as a way to bring my team and peers up to speed on the journey.', createdAt: new Date('2026-03-24').getTime() },
+  ],
 };
 
 const CSS = `
@@ -872,7 +878,7 @@ export default function App() {
     };
     setTl(load(STORAGE.tl, SEED_DATA.tl));
     setCap(load(STORAGE.cap, SEED_DATA.cap));
-    setSessions(load(STORAGE.ses, []));
+    setSessions(load(STORAGE.ses, SEED_DATA.ses));
     setReady(true);
   }, []);
 
