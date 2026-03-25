@@ -9,6 +9,19 @@ const CATS = {
   ideas:      { label: 'Idea / Wishlist',   color: '#A78BFA', glyph: '◐' },
 };
 
+const THEMES = [
+  { id: 'industry',   label: 'Industry',   color: '#4A9EDB' },
+  { id: 'economics',  label: 'Economics',  color: '#F5A623' },
+  { id: 'orgdesign',  label: 'Org Design', color: '#B07FE8' },
+  { id: 'evidence',   label: 'Evidence',   color: '#52C788' },
+  { id: 'leadership', label: 'Leadership', color: '#E86161' },
+  { id: 'signal',     label: 'Signal',     color: '#c9a96e' },
+  { id: 'unlock',     label: 'Unlock',     color: '#34D4D4' },
+];
+
+const toggleTheme = (themes, id) =>
+  themes.includes(id) ? themes.filter(t => t !== id) : [...themes, id];
+
 const uid = () => Date.now().toString(36) + Math.random().toString(36).slice(2, 5);
 const fmtDate = d => new Date(d + 'T00:00:00').toLocaleDateString('en-GB', { day: 'numeric', month: 'short', year: 'numeric' });
 const today = () => new Date().toISOString().slice(0, 10);
@@ -168,6 +181,20 @@ html,body,#root { height:100%; background:var(--bg); color:var(--text); font-fam
 }
 .cat-chip:hover { color:var(--text); }
 .cat-chip.selected { color:#fff; font-weight:600; }
+
+/* THEMES */
+.theme-select-row { display:flex; gap:5px; flex-wrap:wrap; }
+.theme-chip {
+  padding:4px 10px; border-radius:20px; border:1px solid;
+  font-size:11px; font-weight:500; cursor:pointer; background:none;
+  font-family:var(--ff-body); transition:all 0.15s;
+}
+.theme-chip.selected { color:#000 !important; font-weight:600; }
+.theme-pills { display:flex; gap:4px; flex-wrap:wrap; margin-top:6px; }
+.theme-pill {
+  font-size:10px; font-weight:600; padding:2px 7px; border-radius:3px;
+  font-family:var(--ff-mono); letter-spacing:0.03em; white-space:nowrap;
+}
 
 /* TIMELINE ENTRIES */
 .tl-list { display:flex; flex-direction:column; gap:0; }
@@ -329,13 +356,13 @@ function PresentMode({ entries, startIndex, onClose }) {
 
 function TimelineView({ entries, allCount, filterCat, setFilterCat, onAdd, onDelete }) {
   const [show, setShow] = useState(false);
-  const [form, setForm] = useState({ title:'', body:'', date:today(), category:'wow' });
+  const [form, setForm] = useState({ title:'', body:'', date:today(), category:'wow', themes:[] });
   const f = (k, v) => setForm(p => ({...p, [k]:v}));
 
   const submit = () => {
     if (!form.title.trim()) return;
     onAdd({...form, id:uid(), createdAt:Date.now()});
-    setForm({ title:'', body:'', date:today(), category:'wow' });
+    setForm({ title:'', body:'', date:today(), category:'wow', themes:[] });
     setShow(false);
   };
 
@@ -375,6 +402,20 @@ function TimelineView({ entries, allCount, filterCat, setFilterCat, onAdd, onDel
                     style={form.category===k ? {background:v.color, borderColor:v.color} : {borderColor:v.color+'55', color:v.color}}
                     onClick={() => f('category',k)}
                   >{v.glyph} {v.label}</button>
+                ))}
+              </div>
+            </div>
+            <div className="form-grid-full">
+              <div className="form-label">Themes</div>
+              <div className="theme-select-row">
+                {THEMES.map(t => (
+                  <button key={t.id}
+                    className={`theme-chip ${form.themes.includes(t.id)?'selected':''}`}
+                    style={form.themes.includes(t.id)
+                      ? {background:t.color, borderColor:t.color, color:'#000'}
+                      : {borderColor:t.color+'66', color:t.color}}
+                    onClick={() => f('themes', toggleTheme(form.themes, t.id))}
+                  >{t.label}</button>
                 ))}
               </div>
             </div>
@@ -422,6 +463,13 @@ function TimelineView({ entries, allCount, filterCat, setFilterCat, onAdd, onDel
                   </div>
                   <div className="tl-title">{e.title}</div>
                   {e.body && <div className="tl-text">{e.body}</div>}
+                  {(e.themes||[]).length > 0 && (
+                    <div className="theme-pills">
+                      {(e.themes||[]).map(id => { const t = THEMES.find(x=>x.id===id); return t ? (
+                        <span key={id} className="theme-pill" style={{background:t.color+'22',color:t.color}}>{t.label}</span>
+                      ) : null; })}
+                    </div>
+                  )}
                 </div>
               </div>
             );
@@ -435,13 +483,13 @@ function TimelineView({ entries, allCount, filterCat, setFilterCat, onAdd, onDel
 // ─── Capture View ─────────────────────────────────────────────────────────────
 
 function CaptureView({ entries, onAdd, onDelete, onPromote }) {
-  const [form, setForm] = useState({ text:'', source:'' });
+  const [form, setForm] = useState({ text:'', source:'', themes:[] });
   const f = (k,v) => setForm(p => ({...p, [k]:v}));
 
   const submit = () => {
     if (!form.text.trim()) return;
     onAdd({...form, id:uid(), createdAt:Date.now()});
-    setForm({ text:'', source:'' });
+    setForm({ text:'', source:'', themes:[] });
   };
 
   return (
@@ -462,6 +510,20 @@ function CaptureView({ entries, onAdd, onDelete, onPromote }) {
           <input className="form-input" placeholder="Source / attribution (optional)" value={form.source} onChange={e=>f('source',e.target.value)} style={{flex:1}} />
           <button className="btn btn-primary" onClick={submit}>Capture →</button>
         </div>
+        <div style={{marginTop:8}}>
+          <div className="form-label" style={{marginBottom:5}}>Themes</div>
+          <div className="theme-select-row">
+            {THEMES.map(t => (
+              <button key={t.id}
+                className={`theme-chip ${form.themes.includes(t.id)?'selected':''}`}
+                style={form.themes.includes(t.id)
+                  ? {background:t.color, borderColor:t.color, color:'#000'}
+                  : {borderColor:t.color+'66', color:t.color}}
+                onClick={() => f('themes', toggleTheme(form.themes, t.id))}
+              >{t.label}</button>
+            ))}
+          </div>
+        </div>
       </div>
 
       <hr className="divider"/>
@@ -478,6 +540,13 @@ function CaptureView({ entries, onAdd, onDelete, onPromote }) {
             <div className="cap-card" key={e.id}>
               <div className="cap-text">"{e.text}"</div>
               {e.source && <div className="cap-source">— {e.source}</div>}
+              {(e.themes||[]).length > 0 && (
+                <div className="theme-pills">
+                  {(e.themes||[]).map(id => { const t = THEMES.find(x=>x.id===id); return t ? (
+                    <span key={id} className="theme-pill" style={{background:t.color+'22',color:t.color}}>{t.label}</span>
+                  ) : null; })}
+                </div>
+              )}
               <div style={{display:'flex',alignItems:'center',justifyContent:'space-between',marginTop:'auto'}}>
                 <span className="cap-card-time">{new Date(e.createdAt).toLocaleDateString('en-GB',{day:'numeric',month:'short'})}</span>
                 <div className="cap-card-actions">
