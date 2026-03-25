@@ -3,453 +3,441 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Head of Vibe Engineering — Job Description</title>
+<title>Job Description — Head / Director of Engineering Productivity</title>
 <style>
-  @import url('https://fonts.googleapis.com/css2?family=Playfair+Display:ital,wght@0,600;0,700;1,600&family=Figtree:wght@300;400;500;600&family=JetBrains+Mono:wght@400;500&display=swap');
+  @import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600&family=Playfair+Display:wght@600&display=swap');
 
   *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
 
-  :root {
-    --ink: #1a1a1a;
-    --muted: #555;
-    --rule: #d8d0c8;
-    --accent: #2c4a7c;
-    --accent-light: #e8edf5;
-    --gold: #c9a96e;
-    --bg: #faf8f5;
-    --white: #ffffff;
-  }
-
-  html { background: var(--bg); }
-
   body {
-    font-family: 'Figtree', system-ui, sans-serif;
-    color: var(--ink);
-    font-size: 10.5pt;
+    font-family: 'Inter', Arial, sans-serif;
+    font-size: 11pt;
     line-height: 1.7;
-    background: var(--bg);
+    color: #1a1a1a;
+    background: #f5f4f0;
+    padding: 40px 20px;
   }
 
   .page {
-    max-width: 780px;
+    max-width: 800px;
     margin: 0 auto;
-    background: var(--white);
-    padding: 60px 72px 80px;
-    box-shadow: 0 2px 40px rgba(0,0,0,0.08);
+    background: #ffffff;
+    padding: 60px 72px;
+    box-shadow: 0 4px 32px rgba(0,0,0,0.08);
   }
 
-  /* HEADER */
-  .doc-header {
-    border-bottom: 2px solid var(--accent);
-    padding-bottom: 28px;
+  .header-bar {
+    border-top: 5px solid #cc0000;
+    border-bottom: 1px solid #d0cfc8;
+    padding: 20px 0 18px;
     margin-bottom: 36px;
   }
-  .doc-eyebrow {
-    font-family: 'JetBrains Mono', monospace;
+
+  .org-label {
     font-size: 9pt;
-    color: var(--gold);
-    letter-spacing: 0.18em;
+    font-weight: 600;
+    letter-spacing: 0.12em;
     text-transform: uppercase;
-    margin-bottom: 10px;
+    color: #888;
+    margin-bottom: 6px;
   }
-  .doc-title {
+
+  .role-title {
     font-family: 'Playfair Display', Georgia, serif;
-    font-size: 28pt;
-    font-weight: 700;
-    color: var(--accent);
-    line-height: 1.15;
-    margin-bottom: 8px;
+    font-size: 24pt;
+    font-weight: 600;
+    color: #cc0000;
+    line-height: 1.2;
+    margin-bottom: 6px;
   }
-  .doc-subtitle {
-    font-family: 'Playfair Display', Georgia, serif;
-    font-size: 13pt;
-    font-style: italic;
-    color: var(--muted);
-    margin-bottom: 18px;
+
+  .role-subtitle {
+    font-size: 11pt;
+    color: #555;
+    font-weight: 400;
   }
-  .doc-meta {
+
+  .meta-row {
     display: flex;
     gap: 32px;
     flex-wrap: wrap;
-    margin-top: 16px;
-  }
-  .doc-meta-item {
-    font-size: 9pt;
-    color: var(--muted);
-    font-family: 'JetBrains Mono', monospace;
-  }
-  .doc-meta-item strong {
-    color: var(--ink);
-    font-weight: 500;
-  }
-
-  /* CONTEXT BOX */
-  .context-box {
-    background: var(--accent-light);
-    border-left: 3px solid var(--accent);
-    padding: 18px 22px;
-    border-radius: 0 6px 6px 0;
     margin-bottom: 36px;
-    font-size: 10pt;
-    color: var(--ink);
-    line-height: 1.75;
-  }
-  .context-box .label {
-    font-family: 'JetBrains Mono', monospace;
-    font-size: 8.5pt;
-    color: var(--accent);
-    letter-spacing: 0.1em;
-    text-transform: uppercase;
-    margin-bottom: 8px;
-    font-weight: 500;
+    padding-bottom: 28px;
+    border-bottom: 1px solid #e8e6e0;
   }
 
-  /* SECTIONS */
-  h2 {
-    font-family: 'Playfair Display', Georgia, serif;
-    font-size: 14pt;
-    font-weight: 600;
-    color: var(--accent);
-    margin-top: 36px;
-    margin-bottom: 14px;
-    padding-bottom: 6px;
-    border-bottom: 1px solid var(--rule);
-  }
-  h3 {
-    font-size: 10.5pt;
-    font-weight: 600;
-    color: var(--ink);
-    margin-top: 18px;
-    margin-bottom: 8px;
-    letter-spacing: 0.01em;
-  }
-  p { margin-bottom: 12px; }
+  .meta-item { display: flex; flex-direction: column; gap: 2px; }
+  .meta-label { font-size: 8pt; font-weight: 600; letter-spacing: 0.1em; text-transform: uppercase; color: #aaa; }
+  .meta-value { font-size: 10pt; font-weight: 500; color: #1a1a1a; }
 
-  ul {
-    margin: 0 0 14px 0;
-    padding-left: 0;
-    list-style: none;
-  }
-  ul li {
-    padding: 3px 0 3px 18px;
-    position: relative;
-    font-size: 10pt;
-    color: var(--ink);
-  }
-  ul li::before {
-    content: '—';
-    position: absolute;
-    left: 0;
-    color: var(--gold);
-    font-weight: 600;
-  }
-
-  /* TEAM COMPARISON TABLE */
-  .team-table {
-    width: 100%;
-    border-collapse: collapse;
-    margin: 18px 0 24px;
-    font-size: 9.5pt;
-  }
-  .team-table th {
-    background: var(--accent);
-    color: white;
-    padding: 8px 14px;
-    text-align: left;
-    font-weight: 500;
-    font-family: 'Figtree', sans-serif;
+  .draft-badge {
+    margin-left: auto;
+    align-self: flex-start;
+    background: #fff0f0;
+    border: 1px solid #ffaaaa;
+    color: #cc0000;
     font-size: 9pt;
-    letter-spacing: 0.02em;
-  }
-  .team-table td {
-    padding: 8px 14px;
-    border-bottom: 1px solid var(--rule);
-    vertical-align: top;
-    line-height: 1.5;
-  }
-  .team-table tr:nth-child(even) td { background: #f7f5f2; }
-  .team-table .tag {
-    display: inline-block;
-    background: var(--accent-light);
-    color: var(--accent);
-    font-size: 8pt;
-    padding: 2px 7px;
+    font-weight: 600;
+    padding: 4px 12px;
     border-radius: 3px;
-    font-family: 'JetBrains Mono', monospace;
-    white-space: nowrap;
+    letter-spacing: 0.05em;
+    text-transform: uppercase;
   }
-  .team-table .tag.new { background: #eaf5ea; color: #2a6e2a; }
-  .team-table .tag.evolving { background: #fef6e4; color: #7a5800; }
-  .team-table .tag.diminished { background: #fdecea; color: #8b2a2a; }
 
-  /* SIGNAL CALLOUT */
-  .signal {
-    background: #fffbf0;
-    border: 1px solid #e8d89a;
-    border-left: 3px solid var(--gold);
-    border-radius: 0 6px 6px 0;
-    padding: 14px 18px;
-    margin: 18px 0;
+  h2 {
     font-size: 10pt;
-    font-style: italic;
-    color: var(--ink);
-    line-height: 1.7;
-  }
-  .signal .signal-label {
-    font-style: normal;
-    font-family: 'JetBrains Mono', monospace;
-    font-size: 8pt;
-    color: var(--gold);
+    font-weight: 600;
     letter-spacing: 0.1em;
     text-transform: uppercase;
-    margin-bottom: 6px;
-    font-weight: 500;
+    color: #cc0000;
+    margin: 32px 0 12px;
+    padding-bottom: 6px;
+    border-bottom: 1px solid #e0deda;
   }
 
-  /* COMPETENCIES GRID */
-  .comp-grid {
+  p { margin-bottom: 12px; font-size: 10.5pt; color: #2a2a2a; }
+
+  ul, ol { padding-left: 20px; margin-bottom: 14px; }
+
+  li {
+    font-size: 10.5pt;
+    color: #2a2a2a;
+    margin-bottom: 6px;
+    line-height: 1.6;
+  }
+
+  .highlight-box {
+    background: #fff0f0;
+    border-left: 3px solid #cc0000;
+    padding: 14px 18px;
+    margin: 20px 0 24px;
+    font-size: 10.5pt;
+    color: #1a1a1a;
+    line-height: 1.65;
+    font-style: italic;
+  }
+
+  .two-col {
     display: grid;
     grid-template-columns: 1fr 1fr;
-    gap: 12px;
+    gap: 24px;
+    margin-bottom: 8px;
+  }
+  .two-col ul { margin-bottom: 0; }
+
+  .pillar-grid {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 16px;
     margin: 16px 0 24px;
   }
-  .comp-card {
-    border: 1px solid var(--rule);
-    border-radius: 6px;
-    padding: 14px 16px;
+
+  .pillar-card {
+    border: 1px solid #e0deda;
+    border-top: 3px solid #cc0000;
+    border-radius: 4px;
+    padding: 16px 18px;
   }
-  .comp-card h4 {
-    font-size: 9.5pt;
+
+  .pillar-card h3 {
+    font-size: 10pt;
     font-weight: 600;
-    color: var(--accent);
-    margin-bottom: 6px;
-    letter-spacing: 0.01em;
+    color: #cc0000;
+    margin-bottom: 4px;
   }
-  .comp-card p {
+
+  .pillar-card .pillar-sub {
     font-size: 9pt;
-    color: var(--muted);
+    font-weight: 600;
+    color: #888;
+    text-transform: uppercase;
+    letter-spacing: 0.08em;
+    margin-bottom: 10px;
+  }
+
+  .pillar-card p {
+    font-size: 10pt;
+    color: #444;
     margin: 0;
     line-height: 1.6;
   }
 
-  /* FOOTER */
-  .doc-footer {
-    margin-top: 48px;
-    padding-top: 20px;
-    border-top: 1px solid var(--rule);
-    display: flex;
-    justify-content: space-between;
-    align-items: flex-end;
-    font-size: 8.5pt;
-    color: #aaa;
-    font-family: 'JetBrains Mono', monospace;
+  .context-note {
+    background: #fafaf7;
+    border: 1px solid #e0deda;
+    border-radius: 4px;
+    padding: 14px 18px;
+    margin: 16px 0;
+    font-size: 10pt;
+    color: #555;
+    line-height: 1.65;
   }
-  .footer-note {
-    font-style: italic;
-    color: var(--muted);
-    font-family: 'Figtree', sans-serif;
-    font-size: 8.5pt;
-    max-width: 400px;
+
+  .context-note strong { color: #1a1a1a; }
+
+  table {
+    width: 100%;
+    border-collapse: collapse;
+    margin: 12px 0 20px;
+    font-size: 10pt;
+  }
+
+  th {
+    background: #f9f0f0;
+    text-align: left;
+    padding: 8px 12px;
+    font-weight: 600;
+    font-size: 9pt;
+    letter-spacing: 0.05em;
+    text-transform: uppercase;
+    color: #555;
+    border-bottom: 1px solid #d0cfc8;
+  }
+
+  td {
+    padding: 8px 12px;
+    border-bottom: 1px solid #eeece8;
+    vertical-align: top;
     line-height: 1.5;
   }
 
+  tr:last-child td { border-bottom: none; }
+
+  .footer {
+    margin-top: 48px;
+    padding-top: 20px;
+    border-top: 1px solid #e0deda;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    font-size: 8.5pt;
+    color: #aaa;
+  }
+
   @media print {
-    html { background: white; }
-    .page { box-shadow: none; padding: 40px 60px; max-width: 100%; }
-    h2 { break-after: avoid; }
-    .context-box, .signal, .comp-card { break-inside: avoid; }
+    body { background: white; padding: 0; }
+    .page { box-shadow: none; padding: 40px 56px; }
   }
 </style>
 </head>
 <body>
 <div class="page">
 
-  <div class="doc-header">
-    <div class="doc-eyebrow">Role Definition · Technology &amp; Innovation</div>
-    <div class="doc-title">Head of Vibe Engineering</div>
-    <div class="doc-subtitle">AI-Powered Productivity &amp; Internal Tooling</div>
-    <div class="doc-meta">
-      <span class="doc-meta-item"><strong>Function:</strong> Technology / Platform</span>
-      <span class="doc-meta-item"><strong>Reports to:</strong> Director of Platform &amp; Build / CTO</span>
-      <span class="doc-meta-item"><strong>Level:</strong> Senior Individual Contributor / Head of</span>
-      <span class="doc-meta-item"><strong>Draft:</strong> March 2026</span>
+  <div class="header-bar">
+    <div class="org-label">Royal Mail Group · Technology &amp; Platform</div>
+    <div class="role-title">Head / Director of Engineering Productivity</div>
+    <div class="role-subtitle">Internal Platform &amp; Tooling &nbsp;·&nbsp; AI-Assisted Development &nbsp;·&nbsp; Workflow &amp; Productivity Innovation</div>
+  </div>
+
+  <div class="meta-row">
+    <div class="meta-item">
+      <span class="meta-label">Function</span>
+      <span class="meta-value">Platform &amp; Build</span>
+    </div>
+    <div class="meta-item">
+      <span class="meta-label">Reports To</span>
+      <span class="meta-value">Director, Platform &amp; Build / CTO</span>
+    </div>
+    <div class="meta-item" style="max-width:180px;">
+      <span class="meta-label">Level</span>
+      <span class="meta-value">TBC — commensurate with organisational scope</span>
+    </div>
+    <div class="meta-item">
+      <span class="meta-label">Location</span>
+      <span class="meta-value">London / Hybrid</span>
+    </div>
+    <div class="meta-item">
+      <span class="meta-label">Draft</span>
+      <span class="meta-value">March 2026</span>
+    </div>
+    <div class="draft-badge">Draft for Discussion</div>
+  </div>
+
+  <h2>The Context — Why This Role Exists Now</h2>
+
+  <p>The cost of building a bespoke internal tool has dropped to roughly the same as onboarding a SaaS product. When you factor in procurement cycles, vendor evaluations, onboarding, training, and the inevitable "we need the enterprise tier for SSO" conversation — a mid-sized SaaS adoption can represent six figures of internal time, and still deliver something that is 70% of what was actually needed.</p>
+
+  <div class="highlight-box">
+    "The best people to solve workflow and productivity challenges are the people who have to live with them every day — not the vendors who sold to procurement three years ago."
+  </div>
+
+  <p>This role exists at the intersection of that economic shift and a fundamental change in how software gets made. AI-assisted development now means that a motivated individual with domain knowledge can prototype, iterate, and ship a working internal tool in hours rather than months. RMG has already demonstrated this — tools that would previously have required full project teams and procurement approval have been built in under 15 hours of human-directed AI development.</p>
+
+  <p>Critically, this role is not about saying "no" to teams who want to build. It is about saying "yes — and here is something so well-designed and easy to adopt that you would be crazy not to use it." Governance through quality, not bureaucracy. Standards as a consequence of usefulness, not enforcement.</p>
+
+  <div class="context-note">
+    <strong>Industry Signal:</strong> Gartner predicts that by 2030, 80% of large engineering teams will be reorganised into smaller, AI-augmented units. Teams integrating AI deeply into their development pipeline are reducing cycle times by 40–70% with smaller, more senior pods. The organisations that win this transition build the scaffolding — shared repos, design systems, deployment pipelines, lightweight governance — before individual and team-level tool building becomes the wild west.
+  </div>
+
+  <h2>Purpose of the Role</h2>
+
+  <p>To build and lead RMG's internal engineering productivity capability — establishing the platforms, frameworks, and culture that allow individuals and teams across the organisation to rapidly design, build, and deploy bespoke internal tools. The goal is to replace low-value SaaS dependencies, streamline workflows, and surface insights that currently require expensive third-party products, while ensuring all of this happens within a coherent, governed, and sustainable architectural framework.</p>
+
+  <p>This is not a traditional software engineering leadership role. It sits at the intersection of product thinking, AI tooling fluency, and organisational change. Its impact is measured not by team size, but by organisational reach — how many people work differently, how much procurement cost is avoided, and how much faster the organisation can respond to its own workflow problems.</p>
+
+  <h2>The Two Pillars</h2>
+
+  <div class="pillar-grid">
+    <div class="pillar-card">
+      <h3>Direct Leverage</h3>
+      <div class="pillar-sub">Catch the Fish — Build Once, Feed Many</div>
+      <p>Directly build the tools and solutions that should have existed years ago but never did — because the cost, complexity, or procurement overhead made them not worth attempting. This is the hands-on pillar: identifying the problems, building the solutions, and deploying them for the many.</p>
+    </div>
+    <div class="pillar-card">
+      <h3>Indirect Leverage</h3>
+      <div class="pillar-sub">Teach Them to Fish — Then Give Them the Rod, the Net, the Bucket &amp; the Licence</div>
+      <p>Provide the frameworks, components, templates, and guardrails that let any team build their own solutions safely. The rod is the framework. The net is the guardrails. The bucket is the shared platform. The licence is the empowerment to do it. Standards through enablement, not enforcement.</p>
     </div>
   </div>
-
-  <div class="context-box">
-    <div class="label">Why this role exists now</div>
-    A structural shift is underway in how software is built and deployed. The cost and time required to create bespoke internal tooling has dropped to parity with — and in many cases below — the cost of procuring, onboarding, and maintaining third-party SaaS. This creates a new organisational opportunity: empowering the people closest to workflow and productivity problems to solve them directly, at pace, without dependency on traditional development cycles or procurement processes. This role exists to lead that movement inside the organisation.
-  </div>
-
-  <h2>The Opportunity</h2>
-  <p>Engineering and technology organisations have long tolerated a fundamental friction: the people who experience broken workflows every day are rarely the people with the authority or tooling to fix them. They raise tickets. They wait for procurement. They accept 70% of what they asked for, at 3× the cost, after 6 months of vendor evaluation.</p>
-  <p>Vibe Engineering changes that equation. Using AI-assisted development tools — Claude Code, GitHub Copilot, and emerging agentic workflows — individuals and small teams can now build, iterate, and deploy purpose-built internal applications in days rather than quarters. The job of this role is to turn that capability into an organisational advantage: systematic, governed, and scalable.</p>
-
-  <div class="signal">
-    <div class="signal-label">Industry Signal</div>
-    "When the cost of building a bespoke tool drops to roughly the same as onboarding a SaaS product, the entire procurement and vendor evaluation process becomes an organisational liability." The organisations that respond to this shift proactively — building scaffolding before it becomes the wild west — will gain a durable productivity advantage over those that don't.
-  </div>
-
-  <h2>Role Purpose</h2>
-  <p>The Head of Vibe Engineering owns the organisation's internal tooling capability — championing, governing, and accelerating the use of AI-assisted development to solve real workflow and productivity problems across Technology and the wider business. This is not a traditional software engineering leadership role. It sits at the intersection of product thinking, AI tooling fluency, and organisational change.</p>
-  <p>This role is deliberately scoped to <strong>internal tooling and productivity applications</strong>, distinct from the engineering teams responsible for consumer-facing platforms and core business systems. It is the engine room for operational improvement — faster, leaner, and unconstrained by the release cadences of production software.</p>
 
   <h2>Key Responsibilities</h2>
 
-  <h3>Champion &amp; Culture</h3>
+  <p><strong>1. Establish the Internal Engineering Productivity Framework</strong></p>
   <ul>
-    <li>Act as the organisation's lead advocate and practitioner for AI-assisted development — demonstrating by doing, not just directing</li>
-    <li>Upskill colleagues across Technology and beyond: run workshops, share tooling, build confidence in non-engineers to build for themselves</li>
-    <li>Maintain a living chronicle of what has been built, what has been learned, and what the measurable productivity gains have been — building the evidence base for continued investment</li>
-    <li>Represent the vibe engineering capability to leadership, translating technical progress into business value narratives</li>
+    <li>Define and own the internal development framework: frontend standards, shared component libraries, Azure hosting and deployment pipelines, integration patterns with BAU systems (Jira, ADO, Azure DevOps, internal APIs)</li>
+    <li>Leverage and extend the frontend framework being built for the customer platform — enabling internal tools to share the same design system, component library, and integration patterns, dramatically reducing time-to-value for every new tool</li>
+    <li>Establish internal capabilities so well-designed and easy to adopt that teams use them by choice — governance as a consequence of quality, not bureaucracy</li>
   </ul>
 
-  <h3>Delivery &amp; Tooling</h3>
+  <p><strong>2. Supplier and Platform Control</strong></p>
   <ul>
-    <li>Identify high-value workflow and productivity problems across the organisation and prioritise them for internal tool development</li>
-    <li>Lead or directly contribute to the development of internal applications using AI-assisted coding tools, within a shared frontend framework and design system</li>
-    <li>Establish and maintain a reusable, extensible internal tooling platform — shared UI components, authentication, integration patterns with Azure, Jira, ADO, and core data sources</li>
-    <li>Ensure all internally-built tooling is appropriately hosted, versioned, and maintainable — not just shipped and abandoned</li>
-    <li>Apply model selection discipline: use the right AI tool at the right cost for each task, in alignment with the organisation's sustainability and ESG commitments</li>
+    <li>Provide a constructive alternative to teams or suppliers bypassing platform standards — instead of "don't build that," the answer is "use this internal capability, it's better, faster, and already integrated"</li>
+    <li>Reduce fragmentation caused by teams independently adopting overlapping SaaS tools — replace with lightweight, well-integrated internal capabilities where data integration is complex, workflows are RMG-specific, or vendor lock-in is high</li>
+    <li>Ensure third-party engineering teams and internal squads consume shared internal tooling, reinforcing architectural coherence without adversarial governance</li>
   </ul>
 
-  <h3>Governance &amp; Standards</h3>
+  <p><strong>3. Build and Demonstrate the Capability</strong></p>
   <ul>
-    <li>Define and own a lightweight governance framework for individual and team-built internal applications — code review, security baseline, data handling, deployment pipeline</li>
-    <li>Prevent the "wild west" scenario: establish clear standards without creating bureaucratic friction that defeats the purpose of the capability</li>
-    <li>Work with Security, Data, and Infrastructure teams to ensure AI-assisted development practices meet organisational policy requirements</li>
-    <li>Track and report on AI tooling costs, ensuring token spend and model usage remain proportionate to outcomes delivered</li>
+    <li>Lead a small, senior, AI-native team actively building internal tools — and shipping them, not just designing them</li>
+    <li>Own a portfolio of proof-of-concept and production internal applications with measurable productivity gains, time saved, and SaaS spend avoided evidenced from day one</li>
+    <li>Track hours and output per project — building the internal business case iteratively as tools ship, not reconstructing it retrospectively under pressure</li>
   </ul>
 
-  <h3>Strategy &amp; Vision</h3>
+  <p><strong>4. Upskill and Empower the Organisation</strong></p>
   <ul>
-    <li>Maintain a forward-looking view of the AI tooling landscape — surfacing relevant industry signals, capability shifts, and emerging practices for leadership</li>
-    <li>Develop the roadmap for the internal tooling capability: from standalone proof-of-concepts to a unified, integrated internal platform</li>
-    <li>Define the organisational model for vibe engineering at scale — including how pod-based delivery structures, shared infrastructure, and AI-native practices can be adopted incrementally</li>
+    <li>Identify high-potential individuals across Technology and beyond who have workflow problems worth solving — equip them with tools, access, and techniques to solve them themselves</li>
+    <li>Build internal AI-assisted development capability through hands-on co-creation, not classroom training — people leave with something working</li>
+    <li>Use real-world AI stories, live demos, and evidence from RMG's own portfolio to shift mindset across the organisation — the question is no longer "is this possible?" but "what is our governance model for when everyone starts doing this?"</li>
   </ul>
 
-  <h2>The Changing Shape of Engineering Teams</h2>
-  <p>This role exists within a broader industry shift that is reshaping how technology organisations are structured. Understanding this context is essential for the person in this role and for the leadership team sponsoring it.</p>
+  <p><strong>5. Governance, Sustainability, and Environmental Responsibility</strong></p>
+  <ul>
+    <li>Establish AI model usage guidelines — the right model for the right task, avoiding unnecessary token consumption and associated cost and carbon overhead</li>
+    <li>Own the intersection between internal tool development and RMG's green brand commitments — "right model for the right job" is not just an economics principle at RMG, it is a brand protection requirement directly aligned with the company's position as the UK's leading green parcel and logistics carrier</li>
+    <li>Work with Information Security to define safe patterns for internal tool development around data access, authentication, and Azure hosting standards</li>
+  </ul>
 
-  <table class="team-table">
+  <h2>Team Shape</h2>
+
+  <div class="context-note">
+    <strong>Design principle:</strong> This is not a large organisation. It scales through replicable AI-native pods, not headcount. A typical pod is 3–5 people. Current industry thinking (Gartner, a16z, Hatchworks GenDD model) points to small, senior, AI-native pods as the optimal delivery unit. The role's leverage comes from organisational reach and framework quality — not team size.
+  </div>
+
+  <table>
     <tr>
-      <th>Role / Function</th>
-      <th>Traditional Team (10 people)</th>
-      <th>AI-Augmented Pod (3–5 people)</th>
-      <th>Direction of Travel</th>
+      <th>Role</th>
+      <th>What They Do</th>
+      <th>Notes</th>
     </tr>
     <tr>
-      <td>Product Owner / Strategist</td>
-      <td>1 dedicated PO</td>
-      <td>1 — but with broader scope, closer to delivery</td>
-      <td><span class="tag evolving">Evolving</span></td>
+      <td><strong>Head / Director of Engineering Productivity</strong><br><em>(this role)</em></td>
+      <td>Owns vision, framework, governance, stakeholder relationships, upskilling programme. Actively building — not purely strategic.</td>
+      <td>Organisational impact disproportionate to team size. Scope justified by reach, not headcount.</td>
     </tr>
     <tr>
-      <td>Business Analyst</td>
-      <td>1–2 BAs</td>
-      <td>Absorbed into PO or senior dev function</td>
-      <td><span class="tag diminished">Diminished</span></td>
+      <td><strong>Agentic Engineer (x1–2)</strong></td>
+      <td>Directs AI-assisted development, owns technical architecture, code review, integration patterns, deployment</td>
+      <td>AI-fluent, full-stack. Designing how code gets written — not writing every line.</td>
     </tr>
     <tr>
-      <td>Scrum Master</td>
-      <td>1 dedicated SM</td>
-      <td>Shared or rotational; overhead reduced</td>
-      <td><span class="tag diminished">Diminished</span></td>
+      <td><strong>AI Reliability / QA Engineer (x1)</strong></td>
+      <td>Spec ownership, output verification, integration integrity, quality standards</td>
+      <td>Emerging role — the evolved entry-level engineer. Critical for production quality.</td>
     </tr>
     <tr>
-      <td>Solutions Architect</td>
-      <td>1 SA (often external)</td>
-      <td>1 senior engineer with architectural ownership</td>
-      <td><span class="tag evolving">Evolving</span></td>
-    </tr>
-    <tr>
-      <td>Developers (FE/BE)</td>
-      <td>3–5 developers</td>
-      <td>1–2 agentic engineers directing AI output</td>
-      <td><span class="tag evolving">Evolving</span></td>
-    </tr>
-    <tr>
-      <td>DevOps</td>
-      <td>1 dedicated DevOps engineer</td>
-      <td>Embedded in senior engineer; pipelines automated</td>
-      <td><span class="tag evolving">Evolving</span></td>
-    </tr>
-    <tr>
-      <td>QA Engineer</td>
-      <td>1–2 manual + automation QA</td>
-      <td>1 Agentic QA — AI-generated tests, human oversight</td>
-      <td><span class="tag new">New shape</span></td>
-    </tr>
-    <tr>
-      <td>Vibe Engineering Lead</td>
-      <td>Did not exist</td>
-      <td>New role: owns AI tooling, governance, upskilling</td>
-      <td><span class="tag new">Net new</span></td>
+      <td><strong>Embedded domain advocates</strong></td>
+      <td>Co-create tools for specific workflow problems alongside the core pod</td>
+      <td>Rotational, not permanent. The people who suffer the problems help solve them.</td>
     </tr>
   </table>
 
-  <p style="font-size:9.5pt; color:var(--muted); margin-top:-8px;">Sources: Gartner (80% of large engineering teams reorganised into smaller AI-augmented units by 2030), HatchWorks GenDD research, Optimum Partners Engineering Management 2026 report.</p>
+  <h2>Skills and Experience</h2>
 
-  <div class="signal">
-    <div class="signal-label">Important Nuance</div>
-    The move to smaller teams is not without risk. Deloitte's 2025 Tech Value Survey found that teams reporting the strongest AI outcomes were not the smallest — they were the most cognitively diverse and well-connected. The "senior-only" hiring model creates a talent hollow by removing the entry-level career ladder. The right model is smaller and more senior, with deliberate investment in bringing newer talent up through AI-native practices rather than eliminating them entirely.
-  </div>
-
-  <h2>Person Specification</h2>
-  <p>This role does not require a traditional software engineering background. It requires a rare combination of practical AI fluency, product and systems thinking, and the communication skills to shift organisational behaviour. The best candidate may be someone who has been frustrated for years by the gap between the problems they see and the tools available to solve them.</p>
-
-  <div class="comp-grid">
-    <div class="comp-card">
-      <h4>AI Tooling Fluency</h4>
-      <p>Hands-on experience with AI-assisted development tools (Claude Code, Copilot, Cursor or similar). Has shipped something real. Understands the difference between the right model and the expensive model.</p>
+  <div class="two-col">
+    <div>
+      <p><strong>Essential</strong></p>
+      <ul>
+        <li>Direct, hands-on experience building with AI-assisted development tools (Claude Code, Cursor, Copilot or equivalent) — has shipped something real</li>
+        <li>Enough engineering fluency to review AI-generated code, make architectural decisions, and own a deployment pipeline</li>
+        <li>Strong product instincts — identifies the highest-value workflow problem in a room and scopes a solution in hours</li>
+        <li>Ability to communicate value to senior stakeholders — commercially, technically, and culturally</li>
+        <li>Evidence of building a business case from observed outcomes, not theoretical projections</li>
+      </ul>
     </div>
-    <div class="comp-card">
-      <h4>Product Thinking</h4>
-      <p>Instinctively frames problems as user needs before jumping to solutions. Can distinguish between a workflow problem worth solving and one better left alone. Comfortable with ambiguity and iteration.</p>
-    </div>
-    <div class="comp-card">
-      <h4>Systems &amp; Integration Awareness</h4>
-      <p>Understands enough about APIs, authentication, data flows, and cloud infrastructure (Azure) to make sensible architectural decisions. Does not need to be a hands-on engineer but must be a credible technical partner.</p>
-    </div>
-    <div class="comp-card">
-      <h4>Communication &amp; Influence</h4>
-      <p>Can translate technical capability into business outcomes for non-technical audiences. Comfortable presenting to senior stakeholders. Able to build advocates across the organisation — not just in Technology.</p>
-    </div>
-    <div class="comp-card">
-      <h4>Governance Mindset</h4>
-      <p>Understands that freedom without structure creates risk. Can design lightweight governance that enables rather than obstructs. Naturally thinks about security, sustainability, and cost alongside velocity.</p>
-    </div>
-    <div class="comp-card">
-      <h4>Credibility Through Doing</h4>
-      <p>Has evidence of building things. The strongest candidates will have a portfolio of internal tools, prototypes, or AI-assisted projects — not just opinions about what's possible.</p>
+    <div>
+      <p><strong>Highly Desirable</strong></p>
+      <ul>
+        <li>Familiarity with Azure hosting and deployment patterns</li>
+        <li>Experience with React / modern frontend frameworks</li>
+        <li>Prior experience in a large enterprise technology function — understands the friction this role is designed to remove</li>
+        <li>Awareness of AI token economics, model selection discipline, and environmental impact</li>
+        <li>Experience running informal upskilling or co-creation programmes — hands-on making, not classroom training</li>
+      </ul>
     </div>
   </div>
 
-  <h2>What Success Looks Like</h2>
-  <h3>At 3 months</h3>
-  <ul>
-    <li>At least two internal tools in active use, measurably replacing a manual process or third-party tool dependency</li>
-    <li>A shared frontend framework and deployment pipeline established for internal tooling</li>
-    <li>A lightweight governance model documented and socialised with Security and Infrastructure</li>
-    <li>A growing community of internal vibe engineers across Technology — people who have been upskilled and are building for themselves</li>
-  </ul>
-  <h3>At 12 months</h3>
-  <ul>
-    <li>A portfolio of 8–12 internal applications in production, collectively evidencing significant productivity gains</li>
-    <li>A quantified business case: time saved, procurement costs avoided, workflow improvements measured</li>
-    <li>A coherent internal platform strategy — individual apps beginning to integrate under a unified data and identity layer</li>
-    <li>The organisation's AI tooling costs are tracked, governed, and proportionate — aligned with ESG commitments</li>
-    <li>Leadership regularly referencing internal tooling capability as a competitive differentiator</li>
-  </ul>
+  <h2>What Success Looks Like — Year One</h2>
 
-  <div class="signal">
-    <div class="signal-label">A Note for the CTO</div>
-    This role is the organisational answer to a question that is coming whether you plan for it or not: "What happens when individuals and teams start building their own solutions?" The choice is not whether this happens — it is whether it happens in a governed, strategic way that builds a durable capability, or whether it becomes fragmented and ungoverned. The Head of Vibe Engineering builds the scaffolding before it becomes the wild west.
+  <table>
+    <tr>
+      <th>Measure</th>
+      <th>Target</th>
+    </tr>
+    <tr>
+      <td>Internal tools shipped to production</td>
+      <td>4–6 tools live, actively used, replacing or augmenting existing SaaS or manual processes</td>
+    </tr>
+    <tr>
+      <td>SaaS spend avoided or challenged</td>
+      <td>Quantified and evidenced — even rough estimates with clear methodology</td>
+    </tr>
+    <tr>
+      <td>Hours invested vs value delivered</td>
+      <td>Tracked per project from day one; productivity multiplier evidenced (target: 3–5x vs traditional procurement + build)</td>
+    </tr>
+    <tr>
+      <td>Teams enabled to self-serve</td>
+      <td>10+ individuals across Technology who have co-created at least one working internal tool using the shared framework</td>
+    </tr>
+    <tr>
+      <td>Shared framework adopted</td>
+      <td>Frontend framework and deployment patterns in place; new tools startable in under one day</td>
+    </tr>
+    <tr>
+      <td>Supplier and platform coherence improved</td>
+      <td>Measurable reduction in fragmented SaaS adoption; internal capabilities referenced as the default by engineering leads</td>
+    </tr>
+    <tr>
+      <td>AI model usage policy</td>
+      <td>Guidelines published and adopted; carbon and cost overhead tracked and reported in alignment with RMG ESG commitments</td>
+    </tr>
+  </table>
+
+  <h2>The Broader Opportunity</h2>
+
+  <p>This role is being created at a genuine inflection point. The organisations that build this capability now — with governance, shared standards, and a clear empowerment model — will move at a pace that procurement-led competitors simply cannot match.</p>
+
+  <p>At RMG, the additional dimension is responsibility. Doing this well, with appropriate model selection and energy awareness, is not just an ethical consideration — it is directly aligned with the company's position as the UK's leading green parcel and logistics carrier. The same discipline that makes this approach economically defensible makes it environmentally defensible. Those two arguments, made together, are unusually hard to argue against.</p>
+
+  <p>The goal is not to replace engineering. It is to make the boundary between "person with a problem" and "person who ships a solution" as thin as possible — and to build the infrastructure that makes that safe, consistent, scalable, and on-brand.</p>
+
+  <div class="highlight-box">
+    "The question to put to leadership is not 'can we do this?' That question has already been answered. The question is: what is your governance model for when individuals and teams start building their own solutions? Because that is coming whether you plan for it or not. This role builds the scaffolding before it becomes the wild west."
   </div>
 
-  <div class="doc-footer">
-    <div class="footer-note">This document was drafted in a single AI-assisted session as a demonstration of the capability it describes. It is a starting point for conversation, not a final specification.</div>
-    <div>Draft · March 2026</div>
+  <div class="footer">
+    <span>Royal Mail Group · Platform &amp; Build · Confidential Draft</span>
+    <span>Draft · March 2026 · For discussion via Director, Platform &amp; Build</span>
   </div>
 
 </div>

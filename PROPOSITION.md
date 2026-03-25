@@ -60,6 +60,29 @@ The answer — *"One evening. With AI."* — is the argument. The app doesn't de
 
 ---
 
+## The Bigger Realisation — Beyond a Timeline
+
+Chronicle started as a personal journey tracker. But the deeper proposition is more powerful than that.
+
+Every Card added to Chronicle is simultaneously four things: a moment in your story, a piece of evidence for a business case, a slide in a future presentation, and a resource that can be filtered for a specific audience or situation. The timeline is just one view of the data. The real value is what happens when you combine categories, themes, impact scores, and audience tags with a single-click presentation layer.
+
+This makes Chronicle something fundamentally different from a journal, a knowledge base, or a slide deck. It is an **intelligent, filterable knowledge repository** — one that makes the right information available to the right audience at the right moment, with zero preparation overhead.
+
+The implications are significant:
+
+- A sceptical colleague needs proof? Filter by Evidence + Impact 4+. Present in seconds.
+- A CTO needs the strategic picture? Filter by Signal + Leadership. Done.
+- Onboarding a new team member to vibe engineering? Filter by Audience = Beginner. Hand them the device.
+- Building a business case? Filter by Economics + Evidence. The case assembles itself.
+
+No other tool does this — because no other tool was built around this specific journey, in this specific language, by someone living it. The filtering isn't a feature. It's the product.
+
+As the card library grows — across weeks, months, years — Chronicle becomes a living institutional memory for an emerging practice. Cards that were 5-star insights today may become common knowledge tomorrow. New cards will reflect new capabilities, new signals, new evidence. The repository evolves with the field.
+
+This is the scope that justifies building Chronicle properly — not as a personal scratchpad, but as a platform.
+
+---
+
 ## The Longer Vision
 
 Chronicle is the first piece of a larger picture. The eventual fifth application in the RMG vibe engineering portfolio is a **Projects Dashboard** — a visual command centre showing every tool built, every hour invested, every pound of SaaS spend avoided, every productivity multiplier evidenced.
