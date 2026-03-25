@@ -11,6 +11,7 @@ import PresentMode from './components/PresentMode.jsx';
 import Timeline from './components/Timeline.jsx';
 import Capture from './components/Capture.jsx';
 import Sessions from './components/Sessions.jsx';
+import Projects from './components/Projects.jsx';
 
 export default function App() {
   const [tab, setTab] = useState('timeline');
@@ -224,6 +225,7 @@ export default function App() {
             <div className="tabs">
               <button className={`tab ${tab === 'timeline' ? 'on' : ''}`} onClick={() => setTab('timeline')}>Timeline</button>
               <button className={`tab ${tab === 'sessions' ? 'on' : ''}`} onClick={() => setTab('sessions')}>Sessions</button>
+              <button className={`tab ${tab === 'projects' ? 'on' : ''}`} onClick={() => setTab('projects')}>Projects</button>
               <button className={`tab ${tab === 'capture' ? 'on' : ''}`} onClick={() => setTab('capture')}>
                 Capture {cap.length > 0 && <span className="badge">{cap.length}</span>}
               </button>
@@ -249,6 +251,8 @@ export default function App() {
               onDelete={delSes}
               onAddTl={addTl}
             />
+          ) : tab === 'projects' ? (
+            <Projects />
           ) : (
             <Capture
               entries={cap}
