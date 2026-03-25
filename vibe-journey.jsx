@@ -2,7 +2,7 @@ import { useState, useEffect, useCallback } from "react";
 import {
   initLookups,
   loadTimeline, loadCaptures, loadSessions,
-  addTimelineEntry, softDeleteCard, addCapture,
+  addTimelineEntry, updateTimelineEntry, softDeleteCard, addCapture,
   addSession, updateSession, softDeleteSession,
 } from './lib/db.js';
 
@@ -230,7 +230,7 @@ html,body,#root { height:100%; background:var(--bg); color:var(--text); font-fam
   font-size:11px; font-weight:500; cursor:pointer; background:none;
   font-family:var(--ff-body); transition:all 0.15s;
 }
-.theme-chip.selected { color:#000 !important; font-weight:600; }
+.theme-chip.selected { color:#fff !important; font-weight:600; }
 /* BENEFIT */
 .tl-benefit {
   margin-top:10px; padding:8px 12px; border-radius:6px;
@@ -459,18 +459,86 @@ function PresentMode({ entries, startIndex, onClose }) {
   );
 }
 
+// ─── Shared form fields for add and inline edit ───────────────────────────────
+
+function EntryFormFields({ form, onChange }) {
+  const f = (k, v) => onChange(k, v);
+  const catOptions = Object.entries(CATS).filter(([k]) => k !== 'session');
+  const activeCat = CATS[form.category] || CATS.wow;
+  return (
+    <div className="form-grid">
+      <div>
+        <div className="form-label">Title *</div>
+        <input className="form-input" placeholder="e.g. First tried Claude Code" value={form.title} onChange={e=>f('title',e.target.value)} />
+      </div>
+      <div>
+        <div className="form-label">Date</div>
+        <input className="form-input" type="date" value={form.date} onChange={e=>f('date',e.target.value)} />
+      </div>
+      <div className="form-grid-full">
+        <div className="form-label">Notes / Detail</div>
+        <textarea className="form-textarea" placeholder="What happened? What did you learn? How did it feel?" value={form.body} onChange={e=>f('body',e.target.value)} />
+      </div>
+      <div className="form-grid-full">
+        <div className="form-label">Category</div>
+        <div style={{display:'flex', alignItems:'center', gap:8}}>
+          <span style={{width:10, height:10, borderRadius:'50%', background:activeCat.color, flexShrink:0, display:'inline-block'}} />
+          <select className="form-select" value={form.category} onChange={e=>f('category',e.target.value)}>
+            {catOptions.map(([k,v]) => <option key={k} value={k}>{v.glyph} {v.label}</option>)}
+          </select>
+        </div>
+      </div>
+      <div className="form-grid-full">
+        <div className="form-label">Themes</div>
+        <div className="theme-select-row">
+          {THEMES.map(t => (
+            <button key={t.id}
+              className={`theme-chip ${form.themes.includes(t.id)?'selected':''}`}
+              style={form.themes.includes(t.id)
+                ? {background:t.color, borderColor:t.color, color:'#fff'}
+                : {borderColor:t.color+'66', color:t.color}}
+              onClick={() => f('themes', toggleTheme(form.themes, t.id))}
+            >{t.label}</button>
+          ))}
+        </div>
+      </div>
+      <div className="form-grid-full">
+        <div className="form-label">Benefit / so what? <span style={{opacity:0.5,fontWeight:400}}>(optional)</span></div>
+        <input className="form-input" placeholder="e.g. Saves 6 weeks of procurement time per tool" value={form.benefit} onChange={e=>f('benefit',e.target.value)} />
+      </div>
+    </div>
+  );
+}
+
 // ─── Timeline View ────────────────────────────────────────────────────────────
 
-function TimelineView({ entries, allCount, filterCat, setFilterCat, onAdd, onDelete }) {
+const BLANK_FORM = { title:'', body:'', date:today(), category:'wow', themes:[], benefit:'' };
+
+function TimelineView({ entries, allCount, filterCat, setFilterCat, onAdd, onUpdate, onDelete }) {
   const [show, setShow] = useState(false);
-  const [form, setForm] = useState({ title:'', body:'', date:today(), category:'wow', themes:[], benefit:'' });
-  const f = (k, v) => setForm(p => ({...p, [k]:v}));
+  const [form, setForm] = useState(BLANK_FORM);
+  const [editId, setEditId] = useState(null);
+  const [editForm, setEditForm] = useState({});
+  const [confirmDel, setConfirmDel] = useState(null);
 
   const submit = () => {
     if (!form.title.trim()) return;
     onAdd({...form, id:uid(), createdAt:Date.now()});
-    setForm({ title:'', body:'', date:today(), category:'wow', themes:[], benefit:'' });
+    setForm(BLANK_FORM);
     setShow(false);
+  };
+
+  const startEdit = (e) => {
+    setEditForm({ title:e.title, body:e.body||'', date:e.date, category:e.category, themes:e.themes||[], benefit:e.benefit||'' });
+    setEditId(e.id);
+    setConfirmDel(null);
+    setShow(false);
+  };
+
+  const saveEdit = () => {
+    if (!editForm.title.trim()) return;
+    setEditId(null);
+    onUpdate(editId, editForm);
   };
 
   return (
@@ -480,57 +548,14 @@ function TimelineView({ entries, allCount, filterCat, setFilterCat, onAdd, onDel
           <div className="section-eyebrow">Personal Chronicle</div>
           <span className="tl-count">{allCount} {allCount === 1 ? 'entry' : 'entries'}</span>
         </div>
-        <button className="btn btn-primary" onClick={() => setShow(s => !s)}>
+        <button className="btn btn-primary" onClick={() => { setShow(s => !s); setEditId(null); }}>
           {show ? '✕ Cancel' : '+ Add Entry'}
         </button>
       </div>
 
       {show && (
         <div className="form-card">
-          <div className="form-grid">
-            <div>
-              <div className="form-label">Title *</div>
-              <input className="form-input" placeholder="e.g. First tried Claude Code" value={form.title} onChange={e=>f('title',e.target.value)} />
-            </div>
-            <div>
-              <div className="form-label">Date</div>
-              <input className="form-input" type="date" value={form.date} onChange={e=>f('date',e.target.value)} />
-            </div>
-            <div className="form-grid-full">
-              <div className="form-label">Notes / Detail</div>
-              <textarea className="form-textarea" placeholder="What happened? What did you learn? How did it feel?" value={form.body} onChange={e=>f('body',e.target.value)} />
-            </div>
-            <div className="form-grid-full">
-              <div className="form-label">Category</div>
-              <div className="cat-select-row">
-                {Object.entries(CATS).map(([k,v]) => (
-                  <button
-                    key={k} className={`cat-chip ${form.category===k?'selected':''}`}
-                    style={form.category===k ? {background:v.color, borderColor:v.color} : {borderColor:v.color+'55', color:v.color}}
-                    onClick={() => f('category',k)}
-                  >{v.glyph} {v.label}</button>
-                ))}
-              </div>
-            </div>
-            <div className="form-grid-full">
-              <div className="form-label">Themes</div>
-              <div className="theme-select-row">
-                {THEMES.map(t => (
-                  <button key={t.id}
-                    className={`theme-chip ${form.themes.includes(t.id)?'selected':''}`}
-                    style={form.themes.includes(t.id)
-                      ? {background:t.color, borderColor:t.color, color:'#000'}
-                      : {borderColor:t.color+'66', color:t.color}}
-                    onClick={() => f('themes', toggleTheme(form.themes, t.id))}
-                  >{t.label}</button>
-                ))}
-              </div>
-            </div>
-            <div className="form-grid-full">
-              <div className="form-label">Benefit / so what? <span style={{opacity:0.5,fontWeight:400}}>(optional)</span></div>
-              <input className="form-input" placeholder="e.g. Saves 6 weeks of procurement time per tool" value={form.benefit} onChange={e=>f('benefit',e.target.value)} />
-            </div>
-          </div>
+          <EntryFormFields form={form} onChange={(k,v) => setForm(p => ({...p,[k]:v}))} />
           <div className="form-actions">
             <button className="btn btn-ghost" onClick={() => setShow(false)}>Cancel</button>
             <button className="btn btn-primary" onClick={submit}>Add to Timeline</button>
@@ -556,38 +581,60 @@ function TimelineView({ entries, allCount, filterCat, setFilterCat, onAdd, onDel
       ) : (
         <div className="tl-list">
           {entries.map(e => {
-            const cat = CATS[e.category];
+            const cat = CATS[e.category] || CATS.wow;
+            const isEditing = editId === e.id;
+            const editCat = isEditing ? (CATS[editForm.category] || cat) : cat;
             return (
               <div className="tl-entry" key={e.id}>
                 <div className="tl-dot-wrap">
-                  <div className="tl-dot" style={{background:cat.color}}/>
+                  <div className="tl-dot" style={{background: isEditing ? editCat.color : cat.color}}/>
                 </div>
-                <div className="tl-body" style={{borderLeftColor:cat.color}}>
-                  <div className="tl-head-row">
-                    <div className="tl-meta">
-                      <span className="tl-date">{fmtDate(e.date)}</span>
-                      <span className="tl-cat-badge" style={{background:cat.color+'22', color:cat.color}}>{cat.glyph} {cat.label}</span>
-                    </div>
-                    <div className="tl-actions">
-                      <button className="btn btn-ghost btn-sm btn-icon" title="Delete" onClick={() => onDelete(e.id)}>✕</button>
+                {isEditing ? (
+                  <div className="tl-body" style={{borderLeftColor: editCat.color}}>
+                    <EntryFormFields form={editForm} onChange={(k,v) => setEditForm(p => ({...p,[k]:v}))} />
+                    <div className="form-actions">
+                      <button className="btn btn-ghost" onClick={() => setEditId(null)}>Cancel</button>
+                      <button className="btn btn-primary" onClick={saveEdit}>Save Changes</button>
                     </div>
                   </div>
-                  <div className="tl-title">{e.title}</div>
-                  {e.body && <div className="tl-text">{e.body}</div>}
-                  {(e.themes||[]).length > 0 && (
-                    <div className="theme-pills">
-                      {(e.themes||[]).map(id => { const t = THEMES.find(x=>x.id===id); return t ? (
-                        <span key={id} className="theme-pill" style={{background:t.color+'22',color:t.color}}>{t.label}</span>
-                      ) : null; })}
+                ) : (
+                  <div className="tl-body" style={{borderLeftColor:cat.color}}>
+                    <div className="tl-head-row">
+                      <div className="tl-meta">
+                        <span className="tl-date">{fmtDate(e.date)}</span>
+                        <span className="tl-cat-badge" style={{background:cat.color+'22', color:cat.color}}>{cat.glyph} {cat.label}</span>
+                      </div>
+                      <div className="tl-actions">
+                        {confirmDel === e.id ? (
+                          <>
+                            <button className="btn btn-ghost btn-sm" style={{color:'#E86161',fontSize:11}} onClick={() => { onDelete(e.id); setConfirmDel(null); }}>Delete?</button>
+                            <button className="btn btn-ghost btn-sm btn-icon" onClick={() => setConfirmDel(null)}>✕</button>
+                          </>
+                        ) : (
+                          <>
+                            <button className="btn btn-ghost btn-sm btn-icon" title="Edit" onClick={() => startEdit(e)}>✎</button>
+                            <button className="btn btn-ghost btn-sm btn-icon" title="Delete" onClick={() => setConfirmDel(e.id)}>🗑</button>
+                          </>
+                        )}
+                      </div>
                     </div>
-                  )}
-                  {e.benefit && (
-                    <div className="tl-benefit">
-                      <div className="tl-benefit-label">Benefit</div>
-                      <div className="tl-benefit-text">{e.benefit}</div>
-                    </div>
-                  )}
-                </div>
+                    <div className="tl-title">{e.title}</div>
+                    {e.body && <div className="tl-text">{e.body}</div>}
+                    {(e.themes||[]).length > 0 && (
+                      <div className="theme-pills">
+                        {(e.themes||[]).map(id => { const t = THEMES.find(x=>x.id===id); return t ? (
+                          <span key={id} className="theme-pill" style={{background:t.color+'22',color:t.color}}>{t.label}</span>
+                        ) : null; })}
+                      </div>
+                    )}
+                    {e.benefit && (
+                      <div className="tl-benefit">
+                        <div className="tl-benefit-label">Benefit</div>
+                        <div className="tl-benefit-text">{e.benefit}</div>
+                      </div>
+                    )}
+                  </div>
+                )}
               </div>
             );
           })}
@@ -903,6 +950,13 @@ export default function App() {
     } catch (err) { console.error('[Chronicle] addTl failed:', err); }
   }, []);
 
+  const updateTl = useCallback(async (id, fields) => {
+    try {
+      await updateTimelineEntry(id, fields);
+      setTl(p => p.map(e => e.id === id ? { ...e, ...fields } : e));
+    } catch (err) { console.error('[Chronicle] updateTl failed:', err); }
+  }, []);
+
   const delTl = useCallback(async id => {
     try {
       await softDeleteCard(id);
@@ -1068,6 +1122,7 @@ export default function App() {
               filterCat={filterCat}
               setFilterCat={setFilterCat}
               onAdd={addTl}
+              onUpdate={updateTl}
               onDelete={delTl}
             />
           ) : tab === 'sessions' ? (
