@@ -1,4 +1,9 @@
 import { useState, useEffect, useCallback } from "react";
+import {
+  loadTimeline, loadCaptures, loadSessions,
+  addTimelineEntry, softDeleteCard, addCapture,
+  addSession, updateSession, softDeleteSession,
+} from './lib/db.js';
 
 const CATS = {
   tooling:    { label: 'Tooling Decision',  color: '#4A9EDB', glyph: '⚙' },
@@ -860,6 +865,7 @@ export default function App() {
   const [cap, setCap] = useState([]);
   const [sessions, setSessions] = useState([]);
   const [ready, setReady] = useState(false);
+  const [loadError, setLoadError] = useState(null);
   const [presenting, setPresenting] = useState(false);
   const [filterCat, setFilterCat] = useState('all');
   const [showPfPanel, setShowPfPanel] = useState(false);
@@ -868,52 +874,93 @@ export default function App() {
   const [pfSignalOnly, setPfSignalOnly] = useState(false);
 
   useEffect(() => {
-    const load = (key, seed) => {
+    async function boot() {
       try {
-        const raw = localStorage.getItem(key);
-        const parsed = raw ? JSON.parse(raw) : null;
-        if (parsed && parsed.length > 0) {
-          console.log(`[Chronicle] ${key}: loaded ${parsed.length} entries from localStorage`);
-          return parsed;
-        }
-        console.log(`[Chronicle] ${key}: localStorage was ${parsed ? 'empty []' : 'null'} — applying seed (${seed.length} entries)`);
-        return seed;
-      } catch (e) {
-        console.log(`[Chronicle] ${key}: parse error (${e.message}) — applying seed`);
-        return seed;
+        const [tlData, capData, sesData] = await Promise.all([
+          loadTimeline(),
+          loadCaptures(),
+          loadSessions(),
+        ]);
+        setTl(tlData);
+        setCap(capData);
+        setSessions(sesData);
+      } catch (err) {
+        console.error('[Chronicle] Supabase load failed:', err);
+        setLoadError(err.message ?? 'Failed to connect to database.');
+      } finally {
+        setReady(true);
       }
-    };
-    setTl(load(STORAGE.tl, SEED_DATA.tl));
-    setCap(load(STORAGE.cap, SEED_DATA.cap));
-    setSessions(load(STORAGE.ses, SEED_DATA.ses));
-    setReady(true);
+    }
+    boot();
   }, []);
 
-  useEffect(() => { if (ready) { try { localStorage.setItem(STORAGE.tl, JSON.stringify(tl)); } catch {} } }, [tl, ready]);
-  useEffect(() => { if (ready) { try { localStorage.setItem(STORAGE.cap, JSON.stringify(cap)); } catch {} } }, [cap, ready]);
-  useEffect(() => { if (ready) { try { localStorage.setItem(STORAGE.ses, JSON.stringify(sessions)); } catch {} } }, [sessions, ready]);
+  const addTl = useCallback(async entry => {
+    try {
+      const saved = await addTimelineEntry(entry);
+      setTl(p => [...p, saved]);
+    } catch (err) { console.error('[Chronicle] addTl failed:', err); }
+  }, []);
 
-  const addTl = useCallback(entry => setTl(p => [...p, entry]), []);
-  const delTl = useCallback(id => setTl(p => p.filter(e => e.id !== id)), []);
-  const addCap = useCallback(entry => setCap(p => [entry, ...p]), []);
-  const delCap = useCallback(id => setCap(p => p.filter(e => e.id !== id)), []);
-  const addSes = useCallback(entry => setSessions(p => [...p, entry]), []);
-  const delSes = useCallback(id => setSessions(p => p.filter(s => s.id !== id)), []);
-  const updateSes = useCallback((id, fields) => setSessions(p => p.map(s => s.id === id ? {...s, ...fields} : s)), []);
+  const delTl = useCallback(async id => {
+    try {
+      await softDeleteCard(id);
+      setTl(p => p.filter(e => e.id !== id));
+    } catch (err) { console.error('[Chronicle] delTl failed:', err); }
+  }, []);
 
-  const promote = useCallback((cap) => {
-    // Moves a capture to the timeline with pre-filled form
+  const addCap = useCallback(async entry => {
+    try {
+      const saved = await addCapture(entry);
+      setCap(p => [saved, ...p]);
+    } catch (err) { console.error('[Chronicle] addCap failed:', err); }
+  }, []);
+
+  const delCap = useCallback(async id => {
+    try {
+      await softDeleteCard(id);
+      setCap(p => p.filter(e => e.id !== id));
+    } catch (err) { console.error('[Chronicle] delCap failed:', err); }
+  }, []);
+
+  const addSes = useCallback(async entry => {
+    try {
+      const saved = await addSession(entry);
+      setSessions(p => [...p, saved]);
+    } catch (err) { console.error('[Chronicle] addSes failed:', err); }
+  }, []);
+
+  const delSes = useCallback(async id => {
+    try {
+      await softDeleteSession(id);
+      setSessions(p => p.filter(s => s.id !== id));
+    } catch (err) { console.error('[Chronicle] delSes failed:', err); }
+  }, []);
+
+  const updateSes = useCallback(async (id, fields) => {
+    try {
+      await updateSession(id, fields);
+      setSessions(p => p.map(s => s.id === id ? { ...s, ...fields } : s));
+    } catch (err) { console.error('[Chronicle] updateSes failed:', err); }
+  }, []);
+
+  const promote = useCallback(async (cap) => {
     const entry = {
-      id: uid(),
-      title: cap.text.length > 80 ? cap.text.slice(0,78)+'…' : cap.text,
-      body: cap.source ? `${cap.text}\n\n— ${cap.source}` : cap.text,
-      date: today(),
+      title:    cap.text.length > 80 ? cap.text.slice(0, 78) + '…' : cap.text,
+      body:     cap.source ? `${cap.text}\n\n— ${cap.source}` : cap.text,
+      date:     today(),
       category: 'learning',
-      createdAt: Date.now()
+      themes:   cap.themes ?? [],
+      benefit:  '',
     };
-    setTl(p => [...p, entry]);
-    setCap(p => p.filter(e => e.id !== cap.id));
-    setTab('timeline');
+    try {
+      const [saved] = await Promise.all([
+        addTimelineEntry(entry),
+        softDeleteCard(cap.id),
+      ]);
+      setTl(p => [...p, saved]);
+      setCap(p => p.filter(e => e.id !== cap.id));
+      setTab('timeline');
+    } catch (err) { console.error('[Chronicle] promote failed:', err); }
   }, []);
 
   const sorted = [...tl]
@@ -932,7 +979,8 @@ export default function App() {
   const togglePfCat = k => setPfCats(p => p.includes(k) ? p.filter(x=>x!==k) : [...p, k]);
   const togglePfTheme = id => setPfThemes(p => p.includes(id) ? p.filter(x=>x!==id) : [...p, id]);
 
-  if (!ready) return <div style={{background:'#ffffff',height:'100vh',display:'flex',alignItems:'center',justifyContent:'center',color:'#9ca3af',fontFamily:'monospace',fontSize:13}}>loading…</div>;
+  if (!ready) return <div style={{background:'#ffffff',height:'100vh',display:'flex',alignItems:'center',justifyContent:'center',color:'#9ca3af',fontFamily:'monospace',fontSize:13}}>connecting…</div>;
+  if (loadError) return <div style={{background:'#ffffff',height:'100vh',display:'flex',flexDirection:'column',alignItems:'center',justifyContent:'center',gap:12,color:'#E86161',fontFamily:'monospace',fontSize:13}}><div style={{fontSize:22}}>⚠</div><div>Database connection failed</div><div style={{color:'#9ca3af',fontSize:11}}>{loadError}</div></div>;
 
   return (
     <>
