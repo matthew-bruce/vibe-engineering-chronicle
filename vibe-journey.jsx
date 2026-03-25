@@ -331,6 +331,31 @@ html,body,#root { height:100%; background:var(--bg); color:var(--text); font-fam
 
 .divider { border:none; border-top:1px solid var(--border); margin:20px 0; }
 
+/* PRESENT FILTER PANEL */
+.pf-anchor { position:relative; display:flex; gap:6px; align-items:center; }
+.pf-panel {
+  position:absolute; top:calc(100% + 8px); right:0;
+  background:var(--s2); border:1px solid var(--border2);
+  border-radius:10px; padding:16px 18px; min-width:440px; z-index:200;
+  box-shadow:0 8px 32px rgba(0,0,0,0.5);
+  animation:slideIn 0.15s ease;
+}
+.pf-section { margin-bottom:12px; }
+.pf-section-label { font-family:var(--ff-mono); font-size:10px; color:var(--muted); text-transform:uppercase; letter-spacing:0.1em; margin-bottom:6px; }
+.pf-chips { display:flex; gap:5px; flex-wrap:wrap; }
+.pf-chip {
+  padding:3px 10px; border-radius:20px; border:1px solid var(--border2);
+  font-size:11px; color:var(--muted2); background:none;
+  font-family:var(--ff-body); cursor:pointer; transition:all 0.15s;
+  display:flex; align-items:center; gap:4px;
+}
+.pf-chip.on { background:var(--s3); color:var(--text); border-color:var(--muted2); }
+.pf-footer { display:flex; align-items:center; justify-content:space-between; margin-top:14px; padding-top:12px; border-top:1px solid var(--border); }
+.pf-count { font-family:var(--ff-mono); font-size:11px; color:var(--muted2); }
+.btn-filter { background:none; color:var(--muted2); border:1px solid var(--border2); }
+.btn-filter:hover { border-color:var(--muted2); color:var(--text); }
+.btn-filter.on { color:var(--accent); border-color:var(--accent); background:var(--accent-dim); }
+
 /* SESSIONS */
 .ses-overview { display:flex; align-items:flex-start; justify-content:space-between; margin-bottom:20px; flex-wrap:wrap; gap:16px; }
 .ses-grand-total { text-align:right; }
@@ -715,6 +740,10 @@ export default function App() {
   const [ready, setReady] = useState(false);
   const [presenting, setPresenting] = useState(false);
   const [filterCat, setFilterCat] = useState('all');
+  const [showPfPanel, setShowPfPanel] = useState(false);
+  const [pfCats, setPfCats] = useState(() => Object.keys(CATS));
+  const [pfThemes, setPfThemes] = useState(() => THEMES.map(t => t.id));
+  const [pfSignalOnly, setPfSignalOnly] = useState(false);
 
   useEffect(() => {
     const load = (key, seed) => {
@@ -768,13 +797,25 @@ export default function App() {
     .filter(e => filterCat === 'all' || e.category === filterCat)
     .sort((a,b) => new Date(a.date) - new Date(b.date));
 
+  const allSorted = [...tl].sort((a,b) => new Date(a.date) - new Date(b.date));
+  const presentFiltered = allSorted.filter(e => {
+    if (!pfCats.includes(e.category)) return false;
+    if (pfSignalOnly && !(e.themes||[]).includes('signal')) return false;
+    const et = e.themes || [];
+    if (pfThemes.length < THEMES.length && et.length > 0 && !et.some(t => pfThemes.includes(t))) return false;
+    return true;
+  });
+
+  const togglePfCat = k => setPfCats(p => p.includes(k) ? p.filter(x=>x!==k) : [...p, k]);
+  const togglePfTheme = id => setPfThemes(p => p.includes(id) ? p.filter(x=>x!==id) : [...p, id]);
+
   if (!ready) return <div style={{background:'#ffffff',height:'100vh',display:'flex',alignItems:'center',justifyContent:'center',color:'#9ca3af',fontFamily:'monospace',fontSize:13}}>loading…</div>;
 
   return (
     <>
       <style>{CSS}</style>
-      {presenting && sorted.length > 0 && (
-        <PresentMode entries={sorted} startIndex={0} onClose={() => setPresenting(false)} />
+      {presenting && presentFiltered.length > 0 && (
+        <PresentMode entries={presentFiltered} startIndex={0} onClose={() => setPresenting(false)} />
       )}
       <div className="app">
         <header className="hdr">
@@ -787,7 +828,55 @@ export default function App() {
           </div>
           <div className="hdr-right">
             {tl.length > 0 && (
-              <button className="btn btn-present" onClick={() => setPresenting(true)}>▶ Present</button>
+              <div className="pf-anchor">
+                <button
+                  className={`btn btn-filter btn-sm ${showPfPanel?'on':''}`}
+                  onClick={() => setShowPfPanel(s => !s)}
+                >⊞ Filter</button>
+                <button className="btn btn-present" onClick={() => { setShowPfPanel(false); setPresenting(true); }}>▶ Present</button>
+                {showPfPanel && (
+                  <div className="pf-panel">
+                    <div className="pf-section">
+                      <div className="pf-section-label">Categories</div>
+                      <div className="pf-chips">
+                        {Object.entries(CATS).map(([k,v]) => (
+                          <button key={k} className={`pf-chip ${pfCats.includes(k)?'on':''}`}
+                            style={pfCats.includes(k)?{borderColor:v.color,color:v.color}:{}}
+                            onClick={() => togglePfCat(k)}
+                          >{v.glyph} {v.label}</button>
+                        ))}
+                      </div>
+                    </div>
+                    <div className="pf-section">
+                      <div className="pf-section-label">Themes</div>
+                      <div className="pf-chips">
+                        {THEMES.map(t => (
+                          <button key={t.id} className={`pf-chip ${pfThemes.includes(t.id)?'on':''}`}
+                            style={pfThemes.includes(t.id)?{borderColor:t.color,color:t.color}:{}}
+                            onClick={() => togglePfTheme(t.id)}
+                          >{t.label}</button>
+                        ))}
+                      </div>
+                    </div>
+                    <div className="pf-section" style={{marginBottom:0}}>
+                      <div className="pf-chips">
+                        <button className={`pf-chip ${pfSignalOnly?'on':''}`}
+                          style={pfSignalOnly?{borderColor:'var(--accent)',color:'var(--accent)'}:{}}
+                          onClick={() => setPfSignalOnly(s => !s)}
+                        >⚡ Signal entries only</button>
+                      </div>
+                    </div>
+                    <div className="pf-footer">
+                      <span className="pf-count">{presentFiltered.length} of {tl.length} entries selected</span>
+                      <button
+                        className="btn btn-present btn-sm"
+                        disabled={presentFiltered.length === 0}
+                        onClick={() => { setShowPfPanel(false); setPresenting(true); }}
+                      >▶ Present selected ({presentFiltered.length})</button>
+                    </div>
+                  </div>
+                )}
+              </div>
             )}
             <div className="tabs">
               <button className={`tab ${tab==='timeline'?'on':''}`} onClick={() => setTab('timeline')}>Timeline</button>
