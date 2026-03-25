@@ -6,6 +6,7 @@ const CATS = {
   learning:   { label: 'Key Learning',      color: '#F5A623', glyph: '◉' },
   wow:        { label: 'Wow Moment',        color: '#B07FE8', glyph: '✦' },
   aspiration: { label: 'Aspiration / Goal', color: '#E86161', glyph: '◎' },
+  ideas:      { label: 'Idea / Wishlist',   color: '#A78BFA', glyph: '◐' },
 };
 
 const uid = () => Date.now().toString(36) + Math.random().toString(36).slice(2, 5);
