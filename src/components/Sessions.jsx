@@ -51,14 +51,14 @@ export default function Sessions({ sessions, onAdd, onUpdate, onDelete, onAddTl 
 
   return (
     <div>
+      <div className="ses-hero">
+        <div className="ses-hero-hrs">{minsToHours(totalMins)}</div>
+        <div className="ses-hero-label">Total hours invested</div>
+      </div>
       <div className="ses-overview">
         <div>
           <div className="section-eyebrow">Sessions</div>
           <span className="tl-count">{sessions.length} {sessions.length === 1 ? 'session' : 'sessions'} logged</span>
-        </div>
-        <div className="ses-grand-total">
-          <div className="ses-grand-hrs">{minsToHours(totalMins)}</div>
-          <div className="ses-grand-label">Total across all projects</div>
         </div>
       </div>
 

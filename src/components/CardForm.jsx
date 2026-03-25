@@ -7,11 +7,20 @@ export const blankForm = () => ({
   category: 'wow',
   themes: [],
   benefit: '',
+  impact: null,
+  audience: null,
 });
+
+const AUDIENCE_OPTIONS = [
+  { value: 'beginner',     label: 'Beginner' },
+  { value: 'practitioner', label: 'Practitioner' },
+  { value: 'leadership',   label: 'Leadership' },
+  { value: 'universal',    label: 'Universal' },
+];
 
 export default function CardForm({ form, onChange }) {
   const f = (k, v) => onChange(k, v);
-  const catOptions = Object.entries(CATS).filter(([k]) => k !== 'session');
+  const catOptions = Object.entries(CATS).filter(([k]) => k !== 'session' && k !== 'capture');
   const activeCat = CATS[form.category] || CATS.wow;
 
   return (
@@ -58,6 +67,34 @@ export default function CardForm({ form, onChange }) {
           </select>
         </div>
       </div>
+      <div>
+        <div className="form-label">Impact</div>
+        <div className="impact-selector">
+          {[1, 2, 3, 4, 5].map(n => (
+            <button
+              key={n}
+              type="button"
+              className={`impact-dot ${(form.impact ?? 0) >= n ? 'filled' : ''}`}
+              onClick={() => f('impact', form.impact === n ? null : n)}
+              title={`Impact ${n}`}
+            />
+          ))}
+          {form.impact && <span className="impact-value">{form.impact}/5</span>}
+        </div>
+      </div>
+      <div>
+        <div className="form-label">Audience</div>
+        <select
+          className="form-select"
+          value={form.audience ?? ''}
+          onChange={e => f('audience', e.target.value || null)}
+        >
+          <option value="">— none —</option>
+          {AUDIENCE_OPTIONS.map(o => (
+            <option key={o.value} value={o.value}>{o.label}</option>
+          ))}
+        </select>
+      </div>
       <div className="form-grid-full">
         <div className="form-label">Themes</div>
         <div className="theme-select-row">
@@ -75,7 +112,7 @@ export default function CardForm({ form, onChange }) {
       </div>
       <div className="form-grid-full">
         <div className="form-label">
-          Benefit / so what? <span style={{ opacity: 0.5, fontWeight: 400 }}>(optional)</span>
+          Quick benefit note <span style={{ opacity: 0.5, fontWeight: 400 }}>(optional)</span>
         </div>
         <input
           className="form-input"
@@ -83,6 +120,12 @@ export default function CardForm({ form, onChange }) {
           value={form.benefit}
           onChange={e => f('benefit', e.target.value)}
         />
+      </div>
+      <div className="form-grid-full">
+        <div className="linked-benefits-placeholder">
+          <span className="linked-benefits-label">Linked Benefits</span>
+          Formal benefits tracking coming soon — use the quick note above for now.
+        </div>
       </div>
     </div>
   );

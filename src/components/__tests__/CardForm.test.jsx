@@ -18,11 +18,13 @@ describe('blankForm()', () => {
     expect(blankForm().themes).toEqual([]);
   });
 
-  it('has empty title, body, and benefit', () => {
+  it('has empty title, body, and benefit; null impact and audience', () => {
     const f = blankForm();
     expect(f.title).toBe('');
     expect(f.body).toBe('');
     expect(f.benefit).toBe('');
+    expect(f.impact).toBeNull();
+    expect(f.audience).toBeNull();
   });
 
   it('produces a new object each call (not a shared reference)', () => {
@@ -69,26 +71,40 @@ describe('CardForm rendering', () => {
     expect(screen.getByPlaceholderText(/saves 6 weeks/i)).toBeInTheDocument();
   });
 
-  it('renders category select', () => {
+  it('renders category and audience selects', () => {
     renderForm();
-    expect(screen.getByRole('combobox')).toBeInTheDocument();
+    expect(screen.getAllByRole('combobox')).toHaveLength(2);
   });
 
-  it('category select does not include "session" option', () => {
+  it('category select does not include "session" or "capture" options', () => {
     renderForm();
-    const options = Array.from(screen.getByRole('combobox').options).map(o => o.value);
+    const [catSelect] = screen.getAllByRole('combobox');
+    const options = Array.from(catSelect.options).map(o => o.value);
     expect(options).not.toContain('session');
+    expect(options).not.toContain('capture');
   });
 
   it('category select includes expected categories', () => {
     renderForm();
-    const options = Array.from(screen.getByRole('combobox').options).map(o => o.value);
+    const [catSelect] = screen.getAllByRole('combobox');
+    const options = Array.from(catSelect.options).map(o => o.value);
     expect(options).toContain('wow');
     expect(options).toContain('learning');
     expect(options).toContain('tooling');
     expect(options).toContain('built');
     expect(options).toContain('aspiration');
     expect(options).toContain('ideas');
+  });
+
+  it('renders impact dot buttons', () => {
+    renderForm();
+    const dots = document.querySelectorAll('.impact-dot');
+    expect(dots).toHaveLength(5);
+  });
+
+  it('renders linked benefits placeholder', () => {
+    renderForm();
+    expect(screen.getByText(/formal benefits tracking coming soon/i)).toBeInTheDocument();
   });
 
   it('renders all 7 theme chips', () => {
@@ -98,7 +114,7 @@ describe('CardForm rendering', () => {
     expect(screen.getByText('Economics')).toBeInTheDocument();
     expect(screen.getByText('Org Design')).toBeInTheDocument();
     expect(screen.getByText('Evidence')).toBeInTheDocument();
-    expect(screen.getByText('Leadership')).toBeInTheDocument();
+    expect(screen.getAllByText('Leadership').length).toBeGreaterThanOrEqual(1);
     expect(screen.getByText('Unlock')).toBeInTheDocument();
   });
 });
@@ -132,8 +148,30 @@ describe('CardForm onChange callbacks', () => {
 
   it('calls onChange with (category, value) when category select changes', () => {
     const { onChange } = renderForm();
-    fireEvent.change(screen.getByRole('combobox'), { target: { value: 'learning' } });
+    const [catSelect] = screen.getAllByRole('combobox');
+    fireEvent.change(catSelect, { target: { value: 'learning' } });
     expect(onChange).toHaveBeenCalledWith('category', 'learning');
+  });
+
+  it('calls onChange with (impact, n) when an impact dot is clicked', () => {
+    const { onChange } = renderForm({ impact: null });
+    const dots = document.querySelectorAll('.impact-dot');
+    fireEvent.click(dots[2]); // third dot = impact 3
+    expect(onChange).toHaveBeenCalledWith('impact', 3);
+  });
+
+  it('calls onChange with (impact, null) when the active dot is clicked again', () => {
+    const { onChange } = renderForm({ impact: 3 });
+    const dots = document.querySelectorAll('.impact-dot');
+    fireEvent.click(dots[2]); // click dot 3 again → toggle off
+    expect(onChange).toHaveBeenCalledWith('impact', null);
+  });
+
+  it('calls onChange with (audience, value) when audience select changes', () => {
+    const { onChange } = renderForm();
+    const [, audSelect] = screen.getAllByRole('combobox');
+    fireEvent.change(audSelect, { target: { value: 'leadership' } });
+    expect(onChange).toHaveBeenCalledWith('audience', 'leadership');
   });
 
   it('calls onChange with (benefit, value) when benefit input changes', () => {

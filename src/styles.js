@@ -140,13 +140,49 @@ html,body,#root { height:100%; background:var(--bg); color:var(--text); font-fam
 /* BENEFIT */
 .tl-benefit {
   margin-top:10px; padding:8px 12px; border-radius:6px;
-  background:rgba(201,169,110,0.08); border-left:3px solid var(--accent);
+  background:rgba(201,169,110,0.07); border-left:3px solid #c9a96e;
 }
 .tl-benefit-label {
-  font-family:var(--ff-mono); font-size:10px; color:var(--muted2);
+  font-family:var(--ff-mono); font-size:10px; color:#c9a96e;
   text-transform:uppercase; letter-spacing:0.08em; margin-bottom:3px;
 }
-.tl-benefit-text { font-size:13px; color:var(--accent); line-height:1.4; }
+.tl-benefit-text { font-size:13px; color:var(--muted2); line-height:1.4; }
+
+/* IMPACT DOTS — form selector */
+.impact-selector { display:flex; align-items:center; gap:8px; padding-top:4px; }
+.impact-dot {
+  width:16px; height:16px; border-radius:50%; border:2px solid var(--border2);
+  background:none; cursor:pointer; padding:0; transition:all 0.15s; flex-shrink:0;
+}
+.impact-dot.filled { background:var(--accent); border-color:var(--accent); }
+.impact-dot:hover { border-color:var(--accent); }
+.impact-value { font-family:var(--ff-mono); font-size:11px; color:var(--muted2); margin-left:4px; }
+
+/* IMPACT DOTS — card display */
+.tl-impact-dots { display:inline-flex; align-items:center; gap:3px; }
+.tl-impact-dot {
+  width:7px; height:7px; border-radius:50%; border:1px solid var(--border2);
+  background:none; flex-shrink:0;
+}
+.tl-impact-dot.filled { background:var(--accent); border-color:var(--accent); }
+
+/* AUDIENCE PILL */
+.tl-audience-pill {
+  font-size:10px; font-weight:600; padding:2px 7px; border-radius:3px;
+  font-family:var(--ff-mono); letter-spacing:0.05em; white-space:nowrap;
+  background:var(--s3); color:var(--muted2); text-transform:capitalize;
+}
+
+/* LINKED BENEFITS PLACEHOLDER */
+.linked-benefits-placeholder {
+  display:flex; flex-direction:column; gap:4px;
+  padding:10px 14px; border-radius:6px; border:1px dashed var(--border2);
+  font-size:12px; color:var(--muted); line-height:1.5;
+}
+.linked-benefits-label {
+  font-family:var(--ff-mono); font-size:10px; color:var(--muted);
+  text-transform:uppercase; letter-spacing:0.08em;
+}
 
 .theme-pills { display:flex; gap:4px; flex-wrap:wrap; margin-top:6px; }
 .theme-pill {
@@ -288,6 +324,18 @@ html,body,#root { height:100%; background:var(--bg); color:var(--text); font-fam
 .btn-filter.on { color:var(--accent); border-color:var(--accent); background:var(--accent-dim); }
 
 /* SESSIONS */
+.ses-hero {
+  text-align:center; padding:28px 20px 20px;
+  margin-bottom:24px; border-bottom:1px solid var(--border);
+}
+.ses-hero-hrs {
+  font-family:var(--ff-display); font-size:clamp(40px,6vw,64px);
+  font-weight:700; color:var(--accent); line-height:1; letter-spacing:-1px;
+}
+.ses-hero-label {
+  font-family:var(--ff-mono); font-size:11px; color:var(--muted);
+  text-transform:uppercase; letter-spacing:0.15em; margin-top:6px;
+}
 .ses-overview { display:flex; align-items:flex-start; justify-content:space-between; margin-bottom:20px; flex-wrap:wrap; gap:16px; }
 .ses-grand-total { text-align:right; }
 .ses-grand-hrs { font-family:var(--ff-display); font-size:36px; font-weight:700; color:var(--accent); line-height:1; }

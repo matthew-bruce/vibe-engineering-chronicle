@@ -1,11 +1,11 @@
 import { useState, useEffect, useCallback } from 'react';
 import {
   initLookups,
-  loadTimeline, loadCaptures, loadSessions,
-  addTimelineEntry, updateTimelineEntry, softDeleteCard, addCapture,
+  loadTimeline, loadSessions,
+  addTimelineEntry, updateTimelineEntry, softDeleteCard,
   addSession, updateSession, softDeleteSession,
 } from '../lib/db.js';
-import { CATS, THEMES, today } from './constants.js';
+import { CATS, THEMES } from './constants.js';
 import CSS from './styles.js';
 import PresentMode from './components/PresentMode.jsx';
 import Timeline from './components/Timeline.jsx';
@@ -16,7 +16,6 @@ import Projects from './components/Projects.jsx';
 export default function App() {
   const [tab, setTab] = useState('timeline');
   const [tl, setTl] = useState([]);
-  const [cap, setCap] = useState([]);
   const [sessions, setSessions] = useState([]);
   const [ready, setReady] = useState(false);
   const [loadError, setLoadError] = useState(null);
@@ -31,13 +30,11 @@ export default function App() {
     async function boot() {
       try {
         await initLookups();
-        const [tlData, capData, sesData] = await Promise.all([
+        const [tlData, sesData] = await Promise.all([
           loadTimeline(),
-          loadCaptures(),
           loadSessions(),
         ]);
         setTl(tlData);
-        setCap(capData);
         setSessions(sesData);
       } catch (err) {
         console.error('[Chronicle] Supabase load failed:', err);
@@ -70,20 +67,6 @@ export default function App() {
     } catch (err) { console.error('[Chronicle] delTl failed:', err); }
   }, []);
 
-  const addCap = useCallback(async entry => {
-    try {
-      const saved = await addCapture(entry);
-      setCap(p => [saved, ...p]);
-    } catch (err) { console.error('[Chronicle] addCap failed:', err); }
-  }, []);
-
-  const delCap = useCallback(async id => {
-    try {
-      await softDeleteCard(id);
-      setCap(p => p.filter(e => e.id !== id));
-    } catch (err) { console.error('[Chronicle] delCap failed:', err); }
-  }, []);
-
   const addSes = useCallback(async entry => {
     try {
       const saved = await addSession(entry);
@@ -103,26 +86,6 @@ export default function App() {
       await updateSession(id, fields);
       setSessions(p => p.map(s => s.id === id ? { ...s, ...fields } : s));
     } catch (err) { console.error('[Chronicle] updateSes failed:', err); }
-  }, []);
-
-  const promote = useCallback(async (capture) => {
-    const entry = {
-      title:    capture.text.length > 80 ? capture.text.slice(0, 78) + '…' : capture.text,
-      body:     capture.source ? `${capture.text}\n\n— ${capture.source}` : capture.text,
-      date:     today(),
-      category: 'learning',
-      themes:   capture.themes ?? [],
-      benefit:  '',
-    };
-    try {
-      const [saved] = await Promise.all([
-        addTimelineEntry(entry),
-        softDeleteCard(capture.id),
-      ]);
-      setTl(p => [...p, saved]);
-      setCap(p => p.filter(e => e.id !== capture.id));
-      setTab('timeline');
-    } catch (err) { console.error('[Chronicle] promote failed:', err); }
   }, []);
 
   const sorted = [...tl]
@@ -226,9 +189,7 @@ export default function App() {
               <button className={`tab ${tab === 'timeline' ? 'on' : ''}`} onClick={() => setTab('timeline')}>Timeline</button>
               <button className={`tab ${tab === 'sessions' ? 'on' : ''}`} onClick={() => setTab('sessions')}>Sessions</button>
               <button className={`tab ${tab === 'projects' ? 'on' : ''}`} onClick={() => setTab('projects')}>Projects</button>
-              <button className={`tab ${tab === 'capture' ? 'on' : ''}`} onClick={() => setTab('capture')}>
-                Capture {cap.length > 0 && <span className="badge">{cap.length}</span>}
-              </button>
+              <button className={`tab ${tab === 'capture' ? 'on' : ''}`} onClick={() => setTab('capture')}>Capture</button>
             </div>
           </div>
         </header>
@@ -254,12 +215,7 @@ export default function App() {
           ) : tab === 'projects' ? (
             <Projects />
           ) : (
-            <Capture
-              entries={cap}
-              onAdd={addCap}
-              onDelete={delCap}
-              onPromote={promote}
-            />
+            <Capture onAdd={addTl} />
           )}
         </main>
       </div>
