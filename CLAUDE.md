@@ -10,7 +10,7 @@ Chronicle is a personal Vibe Engineering journey tracker. It captures moments, i
 
 It is built by someone living the vibe engineering journey, for that purpose. Every decision should reflect that it is a personal, opinionated tool — not a generic project management app.
 
-**Live URL:** https://vibe-engineering-chronicle.vercel.app
+**Live URL:** https://vibe-engineering-chronicle.vercel.app \
 **Stack:** React (Vite), Supabase (Postgres + Storage), Vercel
 
 ---
