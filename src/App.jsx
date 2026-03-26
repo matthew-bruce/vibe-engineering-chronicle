@@ -91,11 +91,15 @@ export default function App() {
     } catch (err) { console.error('[Chronicle] updateSes failed:', err); }
   }, []);
 
+  const byDateDesc = (a, b) =>
+    new Date(b.date) - new Date(a.date) || b.createdAt - a.createdAt;
+
   const sorted = [...tl]
     .filter(e => filterCat === 'all' || e.category === filterCat)
-    .sort((a, b) => new Date(b.date) - new Date(a.date));
+    .sort(byDateDesc);
 
-  const allSorted = [...tl].sort((a, b) => new Date(a.date) - new Date(b.date));
+  const allSorted = [...tl].sort((a, b) =>
+    new Date(a.date) - new Date(b.date) || a.createdAt - b.createdAt);
   const presentFiltered = allSorted.filter(e => {
     if (!pfCats.includes(e.category)) return false;
     if (pfSignalOnly && !(e.themes || []).includes('signal')) return false;
