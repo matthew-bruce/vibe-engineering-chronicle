@@ -190,6 +190,27 @@ html,body,#root { height:100%; background:var(--bg); color:var(--text); font-fam
   font-family:var(--ff-mono); letter-spacing:0.03em; white-space:nowrap;
 }
 
+/* SEARCH */
+.tl-search-wrap { position:relative; margin-bottom:14px; }
+.tl-search-input {
+  width:100%; background:var(--s1); border:1px solid var(--border2);
+  color:var(--text); border-radius:6px; padding:9px 36px 9px 12px;
+  font-family:var(--ff-body); font-size:14px; outline:none; transition:border 0.15s;
+}
+.tl-search-input:focus { border-color:var(--accent); }
+.tl-search-input::placeholder { color:var(--muted); }
+.tl-search-clear {
+  position:absolute; right:10px; top:50%; transform:translateY(-50%);
+  background:none; border:none; color:var(--muted2); cursor:pointer;
+  font-size:14px; padding:2px 4px; line-height:1;
+}
+.tl-search-clear:hover { color:var(--text); }
+.tl-search-summary {
+  font-family:var(--ff-mono); font-size:11px; color:var(--muted2);
+  margin-bottom:14px; letter-spacing:0.03em;
+}
+mark.search-hl { background:#fef08a; color:inherit; border-radius:2px; padding:0 1px; }
+
 /* TIMELINE ENTRIES */
 .tl-list { display:flex; flex-direction:column; gap:0; }
 .tl-entry {
@@ -364,6 +385,13 @@ html,body,#root { height:100%; background:var(--bg); color:var(--text); font-fam
 .ses-edit-row { display:grid; grid-template-columns:2fr 1fr; gap:10px; margin-bottom:10px; }
 .ses-edit-footer { display:flex; justify-content:flex-end; gap:8px; margin-top:4px; }
 
+/* PROJECTS — STATUS SELECT */
+.proj-status-select {
+  font-size:11px; font-weight:600; padding:3px 8px; border-radius:3px;
+  font-family:var(--ff-mono); letter-spacing:0.03em; border:1px solid;
+  cursor:pointer; outline:none; white-space:nowrap;
+}
+
 /* PROJECTS — LIST */
 .proj-grid { display:grid; grid-template-columns:repeat(auto-fill,minmax(240px,1fr)); gap:16px; }
 .proj-tile {
@@ -388,7 +416,13 @@ html,body,#root { height:100%; background:var(--bg); color:var(--text); font-fam
 
 /* PROJECTS — DETAIL */
 .proj-detail { max-width:860px; }
-.proj-back { margin-bottom:20px; }
+.proj-back-row { display:flex; align-items:center; justify-content:space-between; margin-bottom:20px; }
+.proj-tile-wrap { position:relative; }
+.proj-tile-del {
+  position:absolute; top:8px; left:8px; display:flex; gap:4px;
+  opacity:0; transition:opacity 0.15s;
+}
+.proj-tile-wrap:hover .proj-tile-del { opacity:1; }
 
 /* PROJECTS — CAROUSEL */
 .proj-carousel { margin-bottom:24px; border-radius:10px; overflow:hidden; background:var(--s2); border:1px solid var(--border); }

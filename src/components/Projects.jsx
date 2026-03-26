@@ -1,5 +1,5 @@
 import { useState, useEffect, useRef } from 'react';
-import { getProjects, uploadProjectScreenshot, deleteAttachment } from '../../lib/db.js';
+import { getProjects, uploadProjectScreenshot, deleteAttachment, softDeleteProject, updateProjectStatus } from '../../lib/db.js';
 import { minsToHours } from '../constants.js';
 
 const STATUS_CONFIG = {
@@ -19,6 +19,7 @@ export default function Projects() {
   const [uploadError, setUploadError]         = useState(null);
   const [dragOver, setDragOver]               = useState(false);
   const [confirmDelAtt, setConfirmDelAtt]     = useState(null);
+  const [confirmDelProj, setConfirmDelProj]   = useState(null);
   const fileInputRef = useRef(null);
 
   async function load() {
@@ -89,6 +90,26 @@ export default function Projects() {
     }
   }
 
+  async function handleDeleteProject(id) {
+    try {
+      await softDeleteProject(id);
+      setProjects(prev => prev.filter(p => p.id !== id));
+      if (selectedId === id) setSelectedId(null);
+      setConfirmDelProj(null);
+    } catch (err) {
+      console.error('[Chronicle] softDeleteProject failed:', err);
+    }
+  }
+
+  async function handleStatusChange(id, status) {
+    try {
+      await updateProjectStatus(id, status);
+      setProjects(prev => prev.map(p => p.id === id ? { ...p, status } : p));
+    } catch (err) {
+      console.error('[Chronicle] updateProjectStatus failed:', err);
+    }
+  }
+
   function handleDrop(e) {
     e.preventDefault();
     setDragOver(false);
@@ -119,7 +140,19 @@ export default function Projects() {
 
     return (
       <div className="proj-detail">
-        <button className="btn btn-ghost btn-sm proj-back" onClick={goBack}>← Back to Projects</button>
+        <div className="proj-back-row">
+          <button className="btn btn-ghost btn-sm" onClick={goBack}>← Back</button>
+          <div style={{ display: 'flex', gap: 8, alignItems: 'center' }}>
+            {confirmDelProj === selectedId ? (
+              <>
+                <button className="btn btn-ghost btn-sm" style={{ color: '#E86161', fontSize: 11 }} onClick={() => handleDeleteProject(selectedId)}>Delete project?</button>
+                <button className="btn btn-ghost btn-sm btn-icon" onClick={() => setConfirmDelProj(null)}>✕</button>
+              </>
+            ) : (
+              <button className="btn btn-ghost btn-sm btn-icon" title="Delete project" onClick={() => setConfirmDelProj(selectedId)}>🗑</button>
+            )}
+          </div>
+        </div>
 
         {/* Screenshot carousel */}
         <div className="proj-carousel">
@@ -172,7 +205,16 @@ export default function Projects() {
         {/* Header */}
         <div className="proj-detail-hdr">
           <h2 className="proj-detail-name">{project.name}</h2>
-          <span className="proj-status" style={{ background: st.color + '22', color: st.color, borderColor: st.color + '55' }}>{st.label}</span>
+          <select
+            className="proj-status-select"
+            value={project.status}
+            onChange={e => handleStatusChange(project.id, e.target.value)}
+            style={{ borderColor: st.color + '88', color: st.color, background: st.color + '18' }}
+          >
+            {Object.entries(STATUS_CONFIG).map(([k, v]) => (
+              <option key={k} value={k}>{v.label}</option>
+            ))}
+          </select>
         </div>
 
         {/* Stats */}
@@ -243,23 +285,35 @@ export default function Projects() {
             ? p.problem.slice(0, 130) + (p.problem.length > 130 ? '…' : '')
             : '';
           return (
-            <button key={p.id} className="proj-tile" onClick={() => openDetail(p.id)}>
-              <div className="proj-tile-img-wrap">
-                {thumb
-                  ? <img src={thumb.publicUrl} alt={p.name} className="proj-tile-img" />
-                  : <div className="proj-tile-placeholder"><span>⊙</span></div>
-                }
-                <span className="proj-status proj-tile-status" style={{ background: st.color + '22', color: st.color, borderColor: st.color + '55' }}>{st.label}</span>
-              </div>
-              <div className="proj-tile-body">
-                <div className="proj-tile-name">{p.name}</div>
-                {preview && <div className="proj-tile-preview">{preview}</div>}
-                <div className="proj-tile-meta">
-                  <span className="proj-tile-hrs">{minsToHours(p.totalMins)}</span>
-                  {p.saasReplaced && <span className="proj-tile-saas">replaces {p.saasReplaced}</span>}
+            <div key={p.id} className="proj-tile-wrap">
+              <button className="proj-tile" onClick={() => openDetail(p.id)}>
+                <div className="proj-tile-img-wrap">
+                  {thumb
+                    ? <img src={thumb.publicUrl} alt={p.name} className="proj-tile-img" />
+                    : <div className="proj-tile-placeholder"><span>⊙</span></div>
+                  }
+                  <span className="proj-status proj-tile-status" style={{ background: st.color + '22', color: st.color, borderColor: st.color + '55' }}>{st.label}</span>
                 </div>
+                <div className="proj-tile-body">
+                  <div className="proj-tile-name">{p.name}</div>
+                  {preview && <div className="proj-tile-preview">{preview}</div>}
+                  <div className="proj-tile-meta">
+                    <span className="proj-tile-hrs">{minsToHours(p.totalMins)}</span>
+                    {p.saasReplaced && <span className="proj-tile-saas">replaces {p.saasReplaced}</span>}
+                  </div>
+                </div>
+              </button>
+              <div className="proj-tile-del">
+                {confirmDelProj === p.id ? (
+                  <>
+                    <button className="btn btn-ghost btn-sm" style={{ color: '#E86161', fontSize: 11 }} onClick={e => { e.stopPropagation(); handleDeleteProject(p.id); }}>Delete?</button>
+                    <button className="btn btn-ghost btn-sm btn-icon" onClick={e => { e.stopPropagation(); setConfirmDelProj(null); }}>✕</button>
+                  </>
+                ) : (
+                  <button className="btn btn-ghost btn-sm btn-icon" title="Delete project" onClick={e => { e.stopPropagation(); setConfirmDelProj(p.id); }}>🗑</button>
+                )}
               </div>
-            </button>
+            </div>
           );
         })}
       </div>

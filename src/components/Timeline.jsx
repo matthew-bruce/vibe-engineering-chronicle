@@ -1,6 +1,20 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { CATS, THEMES, uid, fmtDate } from '../constants.js';
 import CardForm, { blankForm } from './CardForm.jsx';
+
+function escapeRegex(s) {
+  return s.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+}
+
+function Highlight({ text, term }) {
+  if (!term || !text) return text;
+  const parts = text.split(new RegExp(`(${escapeRegex(term)})`, 'gi'));
+  return parts.map((part, i) =>
+    part.toLowerCase() === term.toLowerCase()
+      ? <mark key={i} className="search-hl">{part}</mark>
+      : part
+  );
+}
 
 export default function Timeline({ entries, allCount, filterCat, setFilterCat, onAdd, onUpdate, onDelete }) {
   const [show, setShow] = useState(false);
@@ -8,6 +22,13 @@ export default function Timeline({ entries, allCount, filterCat, setFilterCat, o
   const [editId, setEditId] = useState(null);
   const [editForm, setEditForm] = useState({});
   const [confirmDel, setConfirmDel] = useState(null);
+  const [searchRaw, setSearchRaw] = useState('');
+  const [searchTerm, setSearchTerm] = useState('');
+
+  useEffect(() => {
+    const t = setTimeout(() => setSearchTerm(searchRaw.trim()), 300);
+    return () => clearTimeout(t);
+  }, [searchRaw]);
 
   const submit = () => {
     if (!form.title.trim()) return;
@@ -28,6 +49,15 @@ export default function Timeline({ entries, allCount, filterCat, setFilterCat, o
     setEditId(null);
     onUpdate(editId, editForm);
   };
+
+  const q = searchTerm.toLowerCase();
+  const visible = searchTerm
+    ? entries.filter(e =>
+        (e.title || '').toLowerCase().includes(q) ||
+        (e.body  || '').toLowerCase().includes(q) ||
+        (e.benefit || '').toLowerCase().includes(q)
+      )
+    : entries;
 
   return (
     <div>
@@ -51,6 +81,18 @@ export default function Timeline({ entries, allCount, filterCat, setFilterCat, o
         </div>
       )}
 
+      <div className="tl-search-wrap">
+        <input
+          className="tl-search-input"
+          placeholder="Search title, notes, benefit…"
+          value={searchRaw}
+          onChange={e => setSearchRaw(e.target.value)}
+        />
+        {searchRaw && (
+          <button className="tl-search-clear" onClick={() => { setSearchRaw(''); setSearchTerm(''); }} title="Clear search">✕</button>
+        )}
+      </div>
+
       <div className="filter-row">
         <button className={`fchip ${filterCat === 'all' ? 'on' : ''}`} onClick={() => setFilterCat('all')}>All</button>
         {Object.entries(CATS).map(([k, v]) => (
@@ -60,15 +102,30 @@ export default function Timeline({ entries, allCount, filterCat, setFilterCat, o
         ))}
       </div>
 
-      {entries.length === 0 ? (
+      {searchTerm && (
+        <div className="tl-search-summary">
+          {visible.length} {visible.length === 1 ? 'result' : 'results'} for <strong>"{searchTerm}"</strong>
+        </div>
+      )}
+
+      {visible.length === 0 ? (
         <div className="empty">
-          <div className="empty-title">The journey starts here.</div>
-          <div className="empty-sub">Add your first entry — when did you first encounter vibe coding? What tool did you pick up first?</div>
-          <button className="btn btn-primary" onClick={() => setShow(true)}>+ Add First Entry</button>
+          {searchTerm ? (
+            <>
+              <div className="empty-title">No results found.</div>
+              <div className="empty-sub">Try a different search term or clear the filter.</div>
+            </>
+          ) : (
+            <>
+              <div className="empty-title">The journey starts here.</div>
+              <div className="empty-sub">Add your first entry — when did you first encounter vibe coding? What tool did you pick up first?</div>
+              <button className="btn btn-primary" onClick={() => setShow(true)}>+ Add First Entry</button>
+            </>
+          )}
         </div>
       ) : (
         <div className="tl-list">
-          {entries.map(e => {
+          {visible.map(e => {
             const cat = CATS[e.category] || CATS.wow;
             const isEditing = editId === e.id;
             const editCat = isEditing ? (CATS[editForm.category] || cat) : cat;
@@ -116,8 +173,8 @@ export default function Timeline({ entries, allCount, filterCat, setFilterCat, o
                         )}
                       </div>
                     </div>
-                    <div className="tl-title">{e.title}</div>
-                    {e.body && <div className="tl-text">{e.body}</div>}
+                    <div className="tl-title"><Highlight text={e.title} term={searchTerm} /></div>
+                    {e.body && <div className="tl-text"><Highlight text={e.body} term={searchTerm} /></div>}
                     {(e.themes || []).length > 0 && (
                       <div className="theme-pills">
                         {(e.themes || []).map(id => {
@@ -131,7 +188,7 @@ export default function Timeline({ entries, allCount, filterCat, setFilterCat, o
                     {e.benefit && (
                       <div className="tl-benefit">
                         <div className="tl-benefit-label">Benefit</div>
-                        <div className="tl-benefit-text">{e.benefit}</div>
+                        <div className="tl-benefit-text"><Highlight text={e.benefit} term={searchTerm} /></div>
                       </div>
                     )}
                   </div>
