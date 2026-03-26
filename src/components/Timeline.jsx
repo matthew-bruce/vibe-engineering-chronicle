@@ -2,6 +2,7 @@ import { useState, useEffect } from 'react';
 import { THEMES, uid, fmtDate } from '../constants.js';
 import { cats } from '../../lib/cats.js';
 import CardForm, { blankForm } from './CardForm.jsx';
+import QuickCapture from './QuickCapture.jsx';
 
 function escapeRegex(s) {
   return s.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
@@ -81,6 +82,8 @@ export default function Timeline({ entries, allCount, filterCat, setFilterCat, o
           </div>
         </div>
       )}
+
+      <QuickCapture onAdd={onAdd} />
 
       <div className="tl-search-wrap">
         <input

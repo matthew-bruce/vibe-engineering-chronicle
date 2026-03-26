@@ -1,4 +1,5 @@
 import { useState, useEffect, useCallback } from 'react';
+import { Routes, Route, NavLink, Navigate } from 'react-router-dom';
 import {
   initLookups,
   loadTimeline, loadSessions,
@@ -10,12 +11,10 @@ import { cats } from '../lib/cats.js';
 import CSS from './styles.js';
 import PresentMode from './components/PresentMode.jsx';
 import Timeline from './components/Timeline.jsx';
-import Capture from './components/Capture.jsx';
 import Sessions from './components/Sessions.jsx';
 import Projects from './components/Projects.jsx';
 
 export default function App() {
-  const [tab, setTab] = useState('timeline');
   const [tl, setTl] = useState([]);
   const [sessions, setSessions] = useState([]);
   const [ready, setReady] = useState(false);
@@ -216,39 +215,40 @@ export default function App() {
                 )}
               </div>
             )}
-            <div className="tabs">
-              <button className={`tab ${tab === 'timeline' ? 'on' : ''}`} onClick={() => setTab('timeline')}>Timeline</button>
-              <button className={`tab ${tab === 'sessions' ? 'on' : ''}`} onClick={() => setTab('sessions')}>Sessions</button>
-              <button className={`tab ${tab === 'projects' ? 'on' : ''}`} onClick={() => setTab('projects')}>Projects</button>
-              <button className={`tab ${tab === 'capture' ? 'on' : ''}`} onClick={() => setTab('capture')}>Capture</button>
-            </div>
+            <nav className="tabs">
+              <NavLink className={({ isActive }) => `tab${isActive ? ' on' : ''}`} to="/timeline" end>Timeline</NavLink>
+              <NavLink className={({ isActive }) => `tab${isActive ? ' on' : ''}`} to="/sessions">Sessions</NavLink>
+              <NavLink className={({ isActive }) => `tab${isActive ? ' on' : ''}`} to="/projects">Projects</NavLink>
+            </nav>
           </div>
         </header>
         <main className="main">
-          {tab === 'timeline' ? (
-            <Timeline
-              entries={sorted}
-              allCount={tl.length}
-              filterCat={filterCat}
-              setFilterCat={setFilterCat}
-              onAdd={addTl}
-              onUpdate={updateTl}
-              onDelete={delTl}
-              viewMode={viewMode}
-            />
-          ) : tab === 'sessions' ? (
-            <Sessions
-              sessions={sessions}
-              onAdd={addSes}
-              onUpdate={updateSes}
-              onDelete={delSes}
-              onAddTl={addTl}
-            />
-          ) : tab === 'projects' ? (
-            <Projects />
-          ) : (
-            <Capture onAdd={addTl} />
-          )}
+          <Routes>
+            <Route index element={<Navigate to="/timeline" replace />} />
+            <Route path="/timeline" element={
+              <Timeline
+                entries={sorted}
+                allCount={tl.length}
+                filterCat={filterCat}
+                setFilterCat={setFilterCat}
+                onAdd={addTl}
+                onUpdate={updateTl}
+                onDelete={delTl}
+                viewMode={viewMode}
+              />
+            } />
+            <Route path="/sessions" element={
+              <Sessions
+                sessions={sessions}
+                onAdd={addSes}
+                onUpdate={updateSes}
+                onDelete={delSes}
+                onAddTl={addTl}
+              />
+            } />
+            <Route path="/projects" element={<Projects />} />
+            <Route path="*" element={<Navigate to="/timeline" replace />} />
+          </Routes>
         </main>
       </div>
     </>

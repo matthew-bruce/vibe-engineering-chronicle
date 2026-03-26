@@ -253,20 +253,30 @@ mark.search-hl { background:#fef08a; color:inherit; border-radius:2px; padding:0
 .empty-title { font-family:var(--ff-display); font-size:26px; color:var(--muted2); margin-bottom:10px; font-style:italic; }
 .empty-sub { font-size:13px; color:var(--muted); line-height:1.6; max-width:340px; margin:0 auto 20px; }
 
-/* CAPTURE */
-.cap-input-area { margin-bottom:24px; }
-.cap-input-row { display:flex; gap:8px; align-items:flex-end; }
-.cap-grid { display:grid; grid-template-columns:repeat(auto-fill,minmax(260px,1fr)); gap:12px; }
-.cap-card {
-  background:var(--s1); border:1px solid var(--border);
-  border-radius:10px; padding:16px; transition:border-color 0.15s;
-  display:flex; flex-direction:column; gap:10px;
+/* QUICK CAPTURE */
+.qc-wrap { margin-bottom:20px; }
+.qc-row { display:flex; gap:8px; align-items:center; }
+.qc-input {
+  flex:1; background:var(--s1); border:1px solid var(--border2);
+  color:var(--text); border-radius:6px; padding:9px 14px;
+  font-family:var(--ff-body); font-size:14px; outline:none; transition:border 0.15s;
 }
-.cap-card:hover { border-color:var(--border2); }
-.cap-text { font-size:14px; line-height:1.65; color:var(--text); font-style:italic; }
-.cap-source { font-size:12px; font-family:var(--ff-mono); color:var(--muted2); }
-.cap-card-time { font-size:11px; font-family:var(--ff-mono); color:var(--muted); }
-.cap-card-actions { display:flex; gap:6px; justify-content:flex-end; }
+.qc-input:focus { border-color:var(--accent); }
+.qc-input::placeholder { color:var(--muted); font-style:italic; }
+.qc-btn { flex-shrink:0; }
+.qc-extra {
+  display:flex; gap:8px; align-items:center; margin-top:6px;
+  animation: slideIn 0.15s ease;
+}
+.qc-sub-input {
+  flex:1; background:var(--s1); border:1px solid var(--border2);
+  color:var(--text); border-radius:6px; padding:7px 12px;
+  font-family:var(--ff-body); font-size:13px; outline:none; transition:border 0.15s;
+}
+.qc-sub-input:focus { border-color:var(--accent); }
+.qc-sub-input::placeholder { color:var(--muted); }
+.qc-date { flex:0 0 auto; width:auto; }
+.qc-cancel { flex-shrink:0; }
 
 /* SECTION TITLE */
 .section-eyebrow {
