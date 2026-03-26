@@ -8,6 +8,25 @@ function escapeRegex(s) {
   return s.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
 }
 
+function CardSource({ source }) {
+  if (!source) return null;
+  const isUrl = /^https?:\/\//i.test(source);
+  if (isUrl) {
+    return (
+      <div className="tl-source">
+        <a href={source} target="_blank" rel="noopener noreferrer" className="tl-source-link">
+          ↗ {source}
+        </a>
+      </div>
+    );
+  }
+  return (
+    <div className="tl-source">
+      <span className="tl-source-text">⌁ {source}</span>
+    </div>
+  );
+}
+
 function Highlight({ text, term }) {
   if (!term || !text) return text;
   const parts = text.split(new RegExp(`(${escapeRegex(term)})`, 'gi'));
@@ -189,6 +208,7 @@ export default function Timeline({ entries, allCount, filterCat, setFilterCat, o
                         })}
                       </div>
                     )}
+                    <CardSource source={e.source} />
                     {e.benefit && (
                       <div className="tl-benefit">
                         <div className="tl-benefit-label">Benefit</div>

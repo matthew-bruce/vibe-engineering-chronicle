@@ -190,6 +190,16 @@ html,body,#root { height:100%; background:var(--bg); color:var(--text); font-fam
   font-family:var(--ff-mono); letter-spacing:0.03em; white-space:nowrap;
 }
 
+/* SOURCE */
+.tl-source { margin-top:6px; }
+.tl-source-link {
+  font-size:11px; font-family:var(--ff-mono); color:var(--muted2);
+  text-decoration:none; word-break:break-all;
+  transition:color 0.15s;
+}
+.tl-source-link:hover { color:var(--accent); }
+.tl-source-text { font-size:11px; font-family:var(--ff-mono); color:var(--muted); }
+
 /* SEARCH */
 .tl-search-wrap { position:relative; margin-bottom:14px; }
 .tl-search-input {
