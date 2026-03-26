@@ -37,7 +37,7 @@ function Highlight({ text, term }) {
   );
 }
 
-export default function Timeline({ entries, allCount, filterCat, setFilterCat, onAdd, onUpdate, onDelete, viewMode = 'standard' }) {
+export default function Timeline({ entries, allCount, filterCat, setFilterCat, filterTheme, setFilterTheme, onAdd, onUpdate, onDelete, viewMode = 'standard' }) {
   const [show, setShow] = useState(false);
   const [form, setForm] = useState(blankForm);
   const [editId, setEditId] = useState(null);
@@ -124,6 +124,14 @@ export default function Timeline({ entries, allCount, filterCat, setFilterCat, o
           >{v.glyph} {v.label}</button>
         ))}
       </div>
+      <div className="filter-row filter-row-themes">
+        <button className={`fchip fchip-sm ${filterTheme === 'all' ? 'on' : ''}`} onClick={() => setFilterTheme('all')}>All themes</button>
+        {THEMES.map(t => (
+          <button key={t.id} className={`fchip fchip-sm ${filterTheme === t.id ? 'on' : ''}`} onClick={() => setFilterTheme(t.id)}
+            style={filterTheme === t.id ? { borderColor: t.color, color: t.color } : {}}
+          >{t.label}</button>
+        ))}
+      </div>
 
       {searchTerm && (
         <div className="tl-search-summary">
@@ -170,7 +178,7 @@ export default function Timeline({ entries, allCount, filterCat, setFilterCat, o
                     <div className="tl-head-row">
                       <div className="tl-meta">
                         <span className="tl-date">{fmtDate(e.date)}</span>
-                        <span className="tl-cat-badge" style={{ background: cat.color + '22', color: cat.color }}>{cat.glyph} {cat.label}</span>
+                        <button className="tl-cat-badge tl-cat-badge-btn" style={{ background: cat.color + '22', color: cat.color }} onClick={() => setFilterCat(e.category)} title={`Filter by ${cat.label}`}>{cat.glyph} {cat.label}</button>
                         {viewMode === 'detailed' && e.impact && (
                           <span className="tl-impact-dots" title={`Impact ${e.impact}/5`}>
                             {[1,2,3,4,5].map(n => (
@@ -203,7 +211,7 @@ export default function Timeline({ entries, allCount, filterCat, setFilterCat, o
                         {(e.themes || []).map(id => {
                           const t = THEMES.find(x => x.id === id);
                           return t ? (
-                            <span key={id} className="theme-pill" style={{ background: t.color + '22', color: t.color }}>{t.label}</span>
+                            <button key={id} className="theme-pill theme-pill-btn" style={{ background: t.color + '22', color: t.color }} onClick={() => setFilterTheme(id)} title={`Filter by ${t.label}`}>{t.label}</button>
                           ) : null;
                         })}
                       </div>

@@ -1,5 +1,5 @@
 import { useState, useEffect, useCallback } from 'react';
-import { Routes, Route, NavLink, Navigate } from 'react-router-dom';
+import { Routes, Route, NavLink, Navigate, useSearchParams } from 'react-router-dom';
 import {
   initLookups,
   loadTimeline, loadSessions,
@@ -20,8 +20,10 @@ export default function App() {
   const [ready, setReady] = useState(false);
   const [loadError, setLoadError] = useState(null);
   const [presenting, setPresenting] = useState(false);
-  const [filterCat, setFilterCat] = useState('all');
   const [showPfPanel, setShowPfPanel] = useState(false);
+  const [searchParams, setSearchParams] = useSearchParams();
+  const filterCat   = searchParams.get('category') || 'all';
+  const filterTheme = searchParams.get('theme')    || 'all';
   const [pfCats, setPfCats] = useState([]);
   const [pfThemes, setPfThemes] = useState(() => THEMES.map(t => t.id));
   const [pfSignalOnly, setPfSignalOnly] = useState(false);
@@ -90,11 +92,31 @@ export default function App() {
     } catch (err) { console.error('[Chronicle] updateSes failed:', err); }
   }, []);
 
+  const setFilterCat = useCallback(slug => {
+    setSearchParams(prev => {
+      const next = new URLSearchParams(prev);
+      if (slug === 'all') next.delete('category'); else next.set('category', slug);
+      return next;
+    });
+  }, [setSearchParams]);
+
+  const setFilterTheme = useCallback(slug => {
+    setSearchParams(prev => {
+      const next = new URLSearchParams(prev);
+      if (slug === 'all') next.delete('theme'); else next.set('theme', slug);
+      return next;
+    });
+  }, [setSearchParams]);
+
   const byDateDesc = (a, b) =>
     new Date(b.date) - new Date(a.date) || b.createdAt - a.createdAt;
 
   const sorted = [...tl]
-    .filter(e => filterCat === 'all' || e.category === filterCat)
+    .filter(e => {
+      if (filterCat !== 'all' && e.category !== filterCat) return false;
+      if (filterTheme !== 'all' && !(e.themes || []).includes(filterTheme)) return false;
+      return true;
+    })
     .sort(byDateDesc);
 
   const allSorted = [...tl].sort((a, b) =>
@@ -231,6 +253,8 @@ export default function App() {
                 allCount={tl.length}
                 filterCat={filterCat}
                 setFilterCat={setFilterCat}
+                filterTheme={filterTheme}
+                setFilterTheme={setFilterTheme}
                 onAdd={addTl}
                 onUpdate={updateTl}
                 onDelete={delTl}
