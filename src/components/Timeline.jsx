@@ -1,5 +1,6 @@
 import { useState, useEffect } from 'react';
-import { CATS, THEMES, uid, fmtDate } from '../constants.js';
+import { THEMES, uid, fmtDate } from '../constants.js';
+import { cats } from '../../lib/cats.js';
 import CardForm, { blankForm } from './CardForm.jsx';
 
 function escapeRegex(s) {
@@ -95,7 +96,7 @@ export default function Timeline({ entries, allCount, filterCat, setFilterCat, o
 
       <div className="filter-row">
         <button className={`fchip ${filterCat === 'all' ? 'on' : ''}`} onClick={() => setFilterCat('all')}>All</button>
-        {Object.entries(CATS).map(([k, v]) => (
+        {Object.entries(cats).map(([k, v]) => (
           <button key={k} className={`fchip ${filterCat === k ? 'on' : ''}`} onClick={() => setFilterCat(k)}
             style={filterCat === k ? { borderColor: v.color, color: v.color } : {}}
           >{v.glyph} {v.label}</button>
@@ -126,9 +127,9 @@ export default function Timeline({ entries, allCount, filterCat, setFilterCat, o
       ) : (
         <div className="tl-list">
           {visible.map(e => {
-            const cat = CATS[e.category] || CATS.wow;
+            const cat = cats[e.category] || cats.wow;
             const isEditing = editId === e.id;
-            const editCat = isEditing ? (CATS[editForm.category] || cat) : cat;
+            const editCat = isEditing ? (cats[editForm.category] || cat) : cat;
             return (
               <div className="tl-entry" key={e.id}>
                 <div className="tl-dot-wrap">

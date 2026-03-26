@@ -5,7 +5,8 @@ import {
   addTimelineEntry, updateTimelineEntry, softDeleteCard,
   addSession, updateSession, softDeleteSession,
 } from '../lib/db.js';
-import { CATS, THEMES } from './constants.js';
+import { THEMES } from './constants.js';
+import { cats } from '../lib/cats.js';
 import CSS from './styles.js';
 import PresentMode from './components/PresentMode.jsx';
 import Timeline from './components/Timeline.jsx';
@@ -22,7 +23,7 @@ export default function App() {
   const [presenting, setPresenting] = useState(false);
   const [filterCat, setFilterCat] = useState('all');
   const [showPfPanel, setShowPfPanel] = useState(false);
-  const [pfCats, setPfCats] = useState(() => Object.keys(CATS));
+  const [pfCats, setPfCats] = useState([]);
   const [pfThemes, setPfThemes] = useState(() => THEMES.map(t => t.id));
   const [pfSignalOnly, setPfSignalOnly] = useState(false);
   const [viewMode, setViewMode] = useState('standard');
@@ -31,6 +32,7 @@ export default function App() {
     async function boot() {
       try {
         await initLookups();
+        setPfCats(Object.keys(cats));
         const [tlData, sesData] = await Promise.all([
           loadTimeline(),
           loadSessions(),
@@ -152,7 +154,7 @@ export default function App() {
                     <div className="pf-section">
                       <div className="pf-section-label">Categories</div>
                       <div className="pf-chips">
-                        {Object.entries(CATS).map(([k, v]) => (
+                        {Object.entries(cats).map(([k, v]) => (
                           <button key={k} className={`pf-chip ${pfCats.includes(k) ? 'on' : ''}`}
                             style={pfCats.includes(k) ? { borderColor: v.color, color: v.color } : {}}
                             onClick={() => togglePfCat(k)}

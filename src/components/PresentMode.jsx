@@ -1,11 +1,12 @@
 import { useState, useEffect } from 'react';
-import { CATS, fmtDate } from '../constants.js';
+import { fmtDate } from '../constants.js';
+import { cats } from '../../lib/cats.js';
 
 export default function PresentMode({ entries, startIndex, onClose }) {
   const [idx, setIdx] = useState(startIndex);
   const [detailMode, setDetailMode] = useState(false);
   const entry = entries[idx];
-  const cat = entry ? CATS[entry.category] : null;
+  const cat = entry ? cats[entry.category] : null;
 
   useEffect(() => {
     const h = (e) => {

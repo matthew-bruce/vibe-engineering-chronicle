@@ -1,4 +1,5 @@
-import { CATS, THEMES, toggleTheme, today } from '../constants.js';
+import { THEMES, toggleTheme, today } from '../constants.js';
+import { cats } from '../../lib/cats.js';
 
 export const blankForm = () => ({
   title: '',
@@ -21,8 +22,8 @@ const AUDIENCE_OPTIONS = [
 
 export default function CardForm({ form, onChange }) {
   const f = (k, v) => onChange(k, v);
-  const catOptions = Object.entries(CATS).filter(([k]) => k !== 'session' && k !== 'capture');
-  const activeCat = CATS[form.category] || CATS.wow;
+  const catOptions = Object.entries(cats).filter(([k]) => k !== 'session' && k !== 'capture');
+  const activeCat = cats[form.category] || cats.wow;
 
   return (
     <div className="form-grid">
