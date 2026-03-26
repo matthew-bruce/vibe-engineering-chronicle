@@ -469,6 +469,40 @@ mark.search-hl { background:#fef08a; color:inherit; border-radius:2px; padding:0
 .proj-features-list li { font-size:14px; color:var(--muted2); line-height:1.5; padding-left:18px; position:relative; }
 .proj-features-list li::before { content:'◦'; position:absolute; left:0; color:var(--accent); }
 .proj-links { display:flex; gap:10px; margin-top:24px; flex-wrap:wrap; }
+
+/* VIEW TOGGLE */
+.view-toggle-on { color:var(--accent) !important; border-color:var(--accent) !important; background:var(--accent-dim) !important; }
+
+/* CARD SECTIONS — timeline display */
+.tl-sections { margin-top:12px; display:flex; flex-direction:column; gap:8px; }
+.tl-section { padding:8px 12px; border-left:2px solid var(--border2); background:var(--s2); border-radius:0 4px 4px 0; }
+.tl-section-label { font-family:var(--ff-mono); font-size:10px; text-transform:uppercase; letter-spacing:0.05em; color:var(--muted2); margin-bottom:4px; }
+.tl-section-body { font-size:13px; color:var(--muted2); line-height:1.55; white-space:pre-wrap; }
+
+/* CARD SECTIONS — form editor */
+.section-form-item { display:flex; flex-direction:column; gap:6px; border-left:2px solid var(--border2); padding-left:12px; margin-bottom:10px; }
+
+/* PRESENT MODE — sections */
+.present-sections { margin-top:20px; display:flex; flex-direction:column; gap:12px; }
+.present-section { padding:12px 16px; border-left:3px solid var(--border2); background:var(--s1); border-radius:0 6px 6px 0; }
+.present-section-label { font-family:var(--ff-mono); font-size:10px; text-transform:uppercase; letter-spacing:0.06em; color:var(--muted); margin-bottom:6px; }
+.present-section-body { font-size:clamp(13px,1.5vw,16px); color:var(--muted2); line-height:1.6; white-space:pre-wrap; }
+.present-detail-on { color:var(--accent) !important; border-color:var(--accent) !important; }
+
+/* PROJECT MILESTONES */
+.milestone-timeline { display:flex; flex-direction:column; gap:0; }
+.milestone-item { display:flex; gap:14px; align-items:flex-start; }
+.milestone-date-col { width:90px; flex-shrink:0; text-align:right; font-family:var(--ff-mono); font-size:11px; color:var(--muted); padding-top:3px; }
+.milestone-connector { display:flex; flex-direction:column; align-items:center; flex-shrink:0; width:16px; }
+.milestone-dot { width:10px; height:10px; border-radius:50%; background:var(--accent); flex-shrink:0; margin-top:4px; box-shadow:0 0 0 3px var(--accent-dim); }
+.milestone-line { width:2px; flex:1; background:var(--border); min-height:24px; margin-top:4px; }
+.milestone-content { flex:1; padding-bottom:20px; }
+.milestone-item:last-child .milestone-content { padding-bottom:0; }
+.milestone-type-badge { font-family:var(--ff-mono); font-size:10px; font-weight:600; padding:2px 6px; border-radius:3px; text-transform:uppercase; letter-spacing:0.05em; background:var(--s3); color:var(--muted2); flex-shrink:0; }
+.milestone-title { font-size:14px; font-weight:500; color:var(--text); }
+.milestone-description { font-size:13px; color:var(--muted2); line-height:1.55; margin-top:3px; white-space:pre-wrap; }
+.milestone-form { background:var(--s2); border:1px solid var(--border2); border-radius:8px; padding:14px; margin-bottom:16px; }
+.milestone-form-grid { display:grid; grid-template-columns:1fr 1fr; gap:10px; margin-bottom:10px; }
 `;
 
 export default CSS;

@@ -1,6 +1,7 @@
 import { useState, useEffect, useRef } from 'react';
 import { getProjects, uploadProjectScreenshot, deleteAttachment, softDeleteProject, updateProjectStatus } from '../../lib/db.js';
 import { minsToHours } from '../constants.js';
+import ProjectMilestones from './ProjectMilestones.jsx';
 
 const STATUS_CONFIG = {
   live:        { label: 'Live',        color: '#52C788' },
@@ -263,6 +264,9 @@ export default function Projects() {
             {project.demoUrl && <a href={project.demoUrl} target="_blank" rel="noopener noreferrer" className="btn btn-ghost btn-sm">▶ Demo</a>}
           </div>
         )}
+
+        <hr className="divider" />
+        <ProjectMilestones projectId={selectedId} />
       </div>
     );
   }

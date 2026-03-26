@@ -3,6 +3,7 @@ import { CATS, fmtDate } from '../constants.js';
 
 export default function PresentMode({ entries, startIndex, onClose }) {
   const [idx, setIdx] = useState(startIndex);
+  const [detailMode, setDetailMode] = useState(false);
   const entry = entries[idx];
   const cat = entry ? CATS[entry.category] : null;
 
@@ -33,14 +34,29 @@ export default function PresentMode({ entries, startIndex, onClose }) {
             <span className="present-cat-label" style={{ color: cat.color }}>{cat.label}</span>
           </div>
           <div className="present-date">{fmtDate(entry.date)}</div>
-          <div className="present-title">{entry.title}</div>
+          <div className="present-title" style={detailMode ? { fontSize: 'clamp(22px,3.2vw,38px)' } : {}}>{entry.title}</div>
           {entry.body && <div className="present-text">{entry.body}</div>}
+          {detailMode && (entry.sections || []).length > 0 && (
+            <div className="present-sections">
+              {(entry.sections || []).map(s => (
+                <div key={s.id} className="present-section">
+                  <div className="present-section-label">{s.label}</div>
+                  {s.body && <div className="present-section-body">{s.body}</div>}
+                </div>
+              ))}
+            </div>
+          )}
         </div>
       </div>
       <div className="present-footer">
         <button className="btn-close" onClick={onClose}>✕ Close</button>
         <span className="present-counter">{idx + 1} / {entries.length}</span>
         <div className="present-nav">
+          <button
+            className={`btn-close ${detailMode ? 'present-detail-on' : ''}`}
+            onClick={() => setDetailMode(m => !m)}
+            title="Toggle detailed view"
+          >{detailMode ? '⊟ Standard' : '⊞ Detailed'}</button>
           <span className="present-hint">← → or click</span>
           <button className="btn-nav" onClick={() => setIdx(i => Math.max(i - 1, 0))} disabled={idx === 0}>←</button>
           <button className="btn-nav" onClick={() => setIdx(i => Math.min(i + 1, entries.length - 1))} disabled={idx === entries.length - 1}>→</button>

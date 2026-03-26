@@ -25,6 +25,7 @@ export default function App() {
   const [pfCats, setPfCats] = useState(() => Object.keys(CATS));
   const [pfThemes, setPfThemes] = useState(() => THEMES.map(t => t.id));
   const [pfSignalOnly, setPfSignalOnly] = useState(false);
+  const [viewMode, setViewMode] = useState('standard');
 
   useEffect(() => {
     async function boot() {
@@ -137,6 +138,11 @@ export default function App() {
             {tl.length > 0 && (
               <div className="pf-anchor">
                 <button
+                  className={`btn btn-ghost btn-sm ${viewMode === 'detailed' ? 'view-toggle-on' : ''}`}
+                  onClick={() => setViewMode(m => m === 'standard' ? 'detailed' : 'standard')}
+                  title="Toggle standard / detailed view"
+                >{viewMode === 'detailed' ? '⊟ Standard' : '⊞ Detailed'}</button>
+                <button
                   className={`btn btn-filter btn-sm ${showPfPanel ? 'on' : ''}`}
                   onClick={() => setShowPfPanel(s => !s)}
                 >⊞ Filter</button>
@@ -203,6 +209,7 @@ export default function App() {
               onAdd={addTl}
               onUpdate={updateTl}
               onDelete={delTl}
+              viewMode={viewMode}
             />
           ) : tab === 'sessions' ? (
             <Sessions

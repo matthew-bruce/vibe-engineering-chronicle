@@ -16,7 +16,7 @@ function Highlight({ text, term }) {
   );
 }
 
-export default function Timeline({ entries, allCount, filterCat, setFilterCat, onAdd, onUpdate, onDelete }) {
+export default function Timeline({ entries, allCount, filterCat, setFilterCat, onAdd, onUpdate, onDelete, viewMode = 'standard' }) {
   const [show, setShow] = useState(false);
   const [form, setForm] = useState(blankForm);
   const [editId, setEditId] = useState(null);
@@ -38,7 +38,7 @@ export default function Timeline({ entries, allCount, filterCat, setFilterCat, o
   };
 
   const startEdit = (e) => {
-    setEditForm({ title: e.title, body: e.body || '', date: e.date, category: e.category, themes: e.themes || [], benefit: e.benefit || '', impact: e.impact ?? null, audience: e.audience ?? null });
+    setEditForm({ title: e.title, body: e.body || '', date: e.date, category: e.category, themes: e.themes || [], benefit: e.benefit || '', impact: e.impact ?? null, audience: e.audience ?? null, sections: e.sections || [] });
     setEditId(e.id);
     setConfirmDel(null);
     setShow(false);
@@ -189,6 +189,16 @@ export default function Timeline({ entries, allCount, filterCat, setFilterCat, o
                       <div className="tl-benefit">
                         <div className="tl-benefit-label">Benefit</div>
                         <div className="tl-benefit-text"><Highlight text={e.benefit} term={searchTerm} /></div>
+                      </div>
+                    )}
+                    {viewMode === 'detailed' && (e.sections || []).length > 0 && (
+                      <div className="tl-sections">
+                        {(e.sections || []).map(s => (
+                          <div key={s.id} className="tl-section">
+                            <div className="tl-section-label">{s.label}</div>
+                            {s.body && <div className="tl-section-body">{s.body}</div>}
+                          </div>
+                        ))}
                       </div>
                     )}
                   </div>
