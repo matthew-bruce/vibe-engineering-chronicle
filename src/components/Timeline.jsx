@@ -149,7 +149,7 @@ export default function Timeline({ entries, allCount, filterCat, setFilterCat, o
                       <div className="tl-meta">
                         <span className="tl-date">{fmtDate(e.date)}</span>
                         <span className="tl-cat-badge" style={{ background: cat.color + '22', color: cat.color }}>{cat.glyph} {cat.label}</span>
-                        {e.impact && (
+                        {viewMode === 'detailed' && e.impact && (
                           <span className="tl-impact-dots" title={`Impact ${e.impact}/5`}>
                             {[1,2,3,4,5].map(n => (
                               <span key={n} className={`tl-impact-dot ${n <= e.impact ? 'filled' : ''}`} />

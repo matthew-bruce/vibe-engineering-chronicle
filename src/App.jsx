@@ -158,6 +158,16 @@ export default function App() {
                     <div className="pf-section">
                       <div className="pf-section-label">Categories</div>
                       <div className="pf-chips">
+                        {(() => {
+                          const allCatKeys = Object.keys(cats);
+                          const allOn = allCatKeys.every(k => pfCats.includes(k));
+                          return (
+                            <button
+                              className={`pf-chip ${allOn ? 'on' : ''}`}
+                              onClick={() => setPfCats(allOn ? [] : allCatKeys)}
+                            >All Categories</button>
+                          );
+                        })()}
                         {Object.entries(cats).map(([k, v]) => (
                           <button key={k} className={`pf-chip ${pfCats.includes(k) ? 'on' : ''}`}
                             style={pfCats.includes(k) ? { borderColor: v.color, color: v.color } : {}}
@@ -169,6 +179,15 @@ export default function App() {
                     <div className="pf-section">
                       <div className="pf-section-label">Themes</div>
                       <div className="pf-chips">
+                        {(() => {
+                          const allOn = THEMES.every(t => pfThemes.includes(t.id));
+                          return (
+                            <button
+                              className={`pf-chip ${allOn ? 'on' : ''}`}
+                              onClick={() => setPfThemes(allOn ? [] : THEMES.map(t => t.id))}
+                            >All Themes</button>
+                          );
+                        })()}
                         {THEMES.map(t => (
                           <button key={t.id} className={`pf-chip ${pfThemes.includes(t.id) ? 'on' : ''}`}
                             style={pfThemes.includes(t.id) ? { borderColor: t.color, color: t.color } : {}}
