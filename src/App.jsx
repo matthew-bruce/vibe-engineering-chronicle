@@ -132,8 +132,8 @@ export default function App() {
           <div className="hdr-left">
             <div className="hdr-glyph">⟡</div>
             <div>
-              <div className="hdr-title">Vibe Coded</div>
-              <div className="hdr-sub">A personal chronicle · {tl.length} entries</div>
+              <div className="hdr-title">Chronicle</div>
+              <div className="hdr-sub">{tl.length} {tl.length === 1 ? 'card' : 'cards'}</div>
             </div>
           </div>
           <div className="hdr-right">
