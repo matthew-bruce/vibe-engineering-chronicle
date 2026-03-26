@@ -6,115 +6,128 @@
 
 ## What This App Is
 
-Chronicle is a personal Vibe Engineering journey tracker. It captures moments, insights, key learnings, wow moments, ideas, and tooling decisions — and presents them as a filterable, themeable knowledge repository with a full-screen presentation mode.
+Chronicle is a personal Vibe Engineering knowledge OS. It captures cards (insights, learnings, wow moments, ideas, tooling decisions) with categories, themes, impact scores, audience tags, and benefit links — and presents them as a filterable, themeable repository with a full-screen presentation mode and a Projects showcase.
 
 It is built by someone living the vibe engineering journey, for that purpose. Every decision should reflect that it is a personal, opinionated tool — not a generic project management app.
 
-**Live URL:** https://vibe-engineering-chronicle.vercel.app \
-**Stack:** React (Vite), Supabase (Postgres + Storage), Vercel
+**Live URL:** https://vibe-engineering-chronicle.vercel.app
+**Stack:** React 18 (Vite), Supabase (Postgres + Storage + Edge Functions), Vercel
+**Tests:** 62 passing (Vitest)
 
 ---
 
-## Golden Rules — Read Before Every Session
+## Current State
+
+**Component structure (split from monolith — March 2026):**
+- `src/App.jsx` — root, Supabase boot, state, tab navigation
+- `src/components/Timeline.jsx` — timeline tab with inline edit/delete
+- `src/components/Sessions.jsx` — sessions tab with hero stat
+- `src/components/Capture.jsx` — simplified fast-entry capture
+- `src/components/PresentMode.jsx` — full-screen presentation overlay
+- `src/components/CardForm.jsx` — shared add/edit card form
+- `src/components/Projects.jsx` — projects showcase tab
+- `src/lib/supabase.js` — Supabase client initialisation
+- `src/lib/db.js` — all data access functions
+- `src/constants.js` — CATS, THEMES, PROJECTS, utilities
+- `src/styles.js` — CSS template literal
+
+**Last session:** 25 March 2026 — Supabase migration, component split, 62 unit tests, Projects showcase tab, Benefits schema, UI improvements (Impact/Audience fields, Capture simplification, Sessions hero stat)
+
+**Next priorities:**
+- Enrichment Engine — Supabase Edge Function + Database Webhook + Claude API
+- Benefits UI — add/edit/delete benefits against cards
+- Capture API endpoint — POST endpoint for external card creation
+- Impact/Relevance schema fields migration
+
+---
+
+## Golden Rules — Non-Negotiable
 
 ### 1. Always write unit tests
-Every new component, hook, utility function, or data access function must have a corresponding unit test. Use Vitest. Tests live in `__tests__/` adjacent to the file they test. Do not ship untested code.
+Every new component, hook, utility function, or data access function must have a unit test. Use Vitest. Tests live in `__tests__/` adjacent to the file they test. Do not ship untested code. Current count: 62 passing.
 
 ### 2. CRUD is always a requirement
-If a user can **create** something, they can also **edit** and **delete** it. No exceptions. If you are building a form to add a Card, you are also building the edit form and the delete confirmation. Treat this as a default assumption on every feature, not an afterthought.
+If a user can create something, they can also edit and delete it. No exceptions. If you build an add form, you build the edit form and the delete confirmation. This is a default assumption, not an afterthought.
 
 ### 3. Soft deletes only
-Never hard delete records from the database. Set `deleted_at` timestamp instead. The UI filters these out. This applies to cards, sessions, projects — everything.
+Never hard delete records. Set `deleted_at` timestamp instead. The UI filters these out. Applies to cards, sessions, projects, benefits — everything.
 
 ### 4. Confirm before destructive actions
-Any delete action must show a confirmation prompt before executing. No silent deletes.
+Every delete must show a confirmation prompt before executing. No silent deletes.
 
-### 5. Duration is always displayed as days/hours/minutes
-Session durations are stored as integer minutes in the DB. Display them as human-readable strings throughout — e.g. `2h 30m`, `1d 4h`, `45m`. Never display raw minutes to the user.
+### 5. Duration as days/hours/minutes
+Session durations are stored as integer minutes in the DB. Always display as human-readable strings — `2h 30m`, `1d 4h`, `45m`. Never show raw minutes to the user.
 
-### 6. Dates in UK format
-All dates displayed to the user should be in UK format: `24 Mar 2026`. Use `en-GB` locale throughout.
+### 6. UK date format
+All user-facing dates in `en-GB` format: `24 Mar 2026`. Never ISO strings in the UI.
 
-### 7. Component structure
-This app started as a single `vibe-journey.jsx` monolith. As features are added, split into proper components. Each tab (Timeline, Sessions, Present) should be its own component. Forms should be their own components. Keep files under 300 lines where possible.
+### 7. Supabase is the source of truth
+No localStorage for new features. All data through Supabase. `db.js` is the only place database calls are made — never call Supabase directly from components.
 
-### 8. Supabase is the source of truth
-Do not fall back to localStorage for new features. All data goes through Supabase. The localStorage migration is complete once the Supabase backend is wired up — after that, localStorage is dead.
-
-### 9. Environment variables
-Supabase credentials go in `.env.local` — never hardcoded. The variables are:
+### 8. Environment variables only
+Supabase credentials in `.env.local` — never hardcoded:
 - `VITE_SUPABASE_URL`
 - `VITE_SUPABASE_ANON_KEY`
+- `ANTHROPIC_API_KEY` (for Edge Functions)
+
+### 9. Files under 300 lines
+If a file is growing beyond 300 lines, split it. Components should do one thing.
 
 ---
 
-## Data Model Summary
+## Data Model
 
 | Table | Purpose |
 |---|---|
-| `cards` | Every timeline moment, insight, and capture — all just cards |
-| `categories` | User-manageable card categories (Wow Moment, Key Learning etc.) |
-| `themes` | Tags applied to cards and projects (Signal, Unlock, Industry etc.) |
+| `cards` | Every card — timeline moments, captures, all just cards |
+| `categories` | User-manageable categories (Wow Moment, Key Learning etc.) |
+| `themes` | Tags applied to cards and projects |
 | `card_categories` | Many-to-many: cards ↔ categories |
 | `card_themes` | Many-to-many: cards ↔ themes |
 | `projects` | Vibe engineering projects being tracked |
 | `project_themes` | Many-to-many: projects ↔ themes |
-| `sessions` | Time logged against a project, optionally surfaced as a card |
-| `attachments` | Images/files attached to cards or projects, stored in Supabase Storage |
+| `sessions` | Time logged against a project |
+| `attachments` | Images/files for cards or projects — Supabase Storage |
+| `benefits` | Evidenced outcomes linked to cards |
+| `benefit_types` | Lookup: 26 types across cost/time/quality/capability/cultural |
+| `card_benefits` | Many-to-many: cards ↔ benefits |
 
-**Key field notes:**
-- `card_impact` — integer 1–5, CHECK constraint enforced at DB level
+**Key field constraints:**
+- `card_impact` — int 1–5, CHECK constraint at DB level
 - `card_audience` — enum: `beginner`, `practitioner`, `leadership`, `universal`
+- `card_relevance` — enum: `current`, `review`, `dated`, `evergreen`
+- `card_impact_source` / `card_relevance_source` — enum: `ai`, `human`
 - `project_status` — enum: `poc`, `in_progress`, `live`, `archived`
-- `card_event_date` — when the moment happened (not when it was added to Chronicle)
-- All FKs that reference soft-deleted records should be nullable
+- `card_event_date` — when the moment happened, nullable (null = capture card)
+- Soft delete pattern: `*_deleted_at` nullable timestamp on every main table
 
 ---
 
-## Categories (seed data — user can add more)
+## Enrichment Engine (planned — next session)
 
-| Name | Colour | Glyph |
-|---|---|---|
-| Wow Moment | #B07FE8 | ✦ |
-| Key Learning | #F5A623 | ◉ |
-| Tooling Decision | #4A9EDB | ⚙ |
-| Thing I Built | #52C788 | ◈ |
-| Aspiration / Goal | #E86161 | ◎ |
-| Idea / Wishlist | #A78BFA | ◐ |
+Cards are enriched automatically on INSERT via:
+1. Supabase Database Webhook fires on every card INSERT
+2. Calls Edge Function `enrich-card`
+3. Edge Function calls Claude API (claude-sonnet-4-6)
+4. Returns: impact, relevance, ai_themes, ai_audience, ai_summary
+5. Writes back to card with `_source = 'ai'`
+6. UI shows AI-suggested values in amber — confirm or dismiss
 
-## Themes (seed data — user can add more)
-
-| Name | Description |
-|---|---|
-| Industry | Market shifts, sector trends, what's coming |
-| Economics | Cost, value, build vs buy arguments |
-| Org Design | Structure, governance, empowering teams |
-| Evidence | Proof points, demos, real stories |
-| Leadership | Things to put directly to management |
-| Signal | Executive-ready insights — inspiring, provocative, or both |
-| Unlock | Moments where something previously impossible became possible |
-
----
-
-## Projects (seed data)
-
-- Dispatch (PI Planning Tool) — status: live
-- Platform Org Structure — status: in_progress
-- Platform Roadmapping Tool — status: poc
-- Vibe Engineering Chronicle — status: live
-- Vibe Engineering Strategy — status: in_progress
+Separate scheduled Edge Function runs monthly for relevance drift in both directions.
 
 ---
 
 ## What Not to Do
 
-- Do not use `any` TypeScript types if TypeScript is introduced
-- Do not store computed values in the DB (e.g. total session hours — calculate from session_duration_minutes)
+- Do not call Supabase directly from components — use `db.js` functions only
+- Do not store computed values in the DB — calculate from raw data
 - Do not show raw minutes to users
-- Do not hardcode Supabase credentials
+- Do not hardcode credentials
 - Do not hard delete records
-- Do not build a create form without also building edit and delete
+- Do not build create without edit and delete
 - Do not skip tests
+- Do not use `any` if TypeScript is introduced
+- Do not use localStorage for new features
 
 ---
 
