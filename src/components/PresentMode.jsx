@@ -130,11 +130,29 @@ export default function PresentMode({ entries, startIndex = 0, onClose }) {
         </div>
       </div>
 
-      {/* SLIDE CONTENT — scrollable */}
+      {/* SLIDE CONTENT — scrollable viewport with floating nav arrows */}
       <div className="pm-slide-area">
-        <div className="pm-slide-wrap" key={`${entry.id}-${templateSlug}`}>
-          {renderer(entry)}
+        <button
+          className="pm-nav-btn pm-nav-prev"
+          onClick={() => setIdx(i => Math.max(i - 1, 0))}
+          disabled={idx === 0}
+          aria-label="Previous slide"
+        >←</button>
+
+        <div className="pm-slide-viewport">
+          <div className="pm-slide-inner">
+            <div className="pm-slide-wrap" key={`${entry.id}-${templateSlug}`}>
+              {renderer(entry)}
+            </div>
+          </div>
         </div>
+
+        <button
+          className="pm-nav-btn pm-nav-next"
+          onClick={() => setIdx(i => Math.min(i + 1, n - 1))}
+          disabled={idx === n - 1}
+          aria-label="Next slide"
+        >→</button>
       </div>
 
       {/* THUMBNAIL STRIP — accordion */}
@@ -164,29 +182,14 @@ export default function PresentMode({ entries, startIndex = 0, onClose }) {
         </div>
       )}
 
-      {/* BOTTOM BAR */}
+      {/* BOTTOM BAR — progress, thumbnails toggle, exit */}
       <div className="pm-bottom-bar">
-        <button
-          className="pm-nav-btn"
-          onClick={() => setIdx(i => Math.max(i - 1, 0))}
-          disabled={idx === 0}
-          aria-label="Previous slide"
-        >←</button>
-
         <div className="pm-progress-wrap">
           <div className="pm-progress-track">
             <div className="pm-progress-fill" style={{ width: `${pct}%` }} />
           </div>
           <div className="pm-progress-label">{idx + 1} of {n} {n === 1 ? 'card' : 'cards'}</div>
         </div>
-
-        <button
-          className="pm-nav-btn"
-          onClick={() => setIdx(i => Math.min(i + 1, n - 1))}
-          disabled={idx === n - 1}
-          aria-label="Next slide"
-        >→</button>
-
         <button className="pm-thumbs-toggle" onClick={() => setThumbsOpen(s => !s)}>
           {thumbsOpen ? '▼ Slides' : '▲ Slides'}
         </button>

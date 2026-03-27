@@ -340,10 +340,17 @@ mark.search-hl { background:#fef08a; color:inherit; border-radius:2px; padding:0
 }
 .pm-exit-btn:hover { background:var(--accent-dim); }
 
-/* Slide content area */
+/* Slide content area — viewport + vertical centering */
 .pm-slide-area {
-  flex:1; overflow-y:auto; display:flex; justify-content:center;
-  align-items:flex-start; padding:48px 32px;
+  flex:1; min-height:0; position:relative; display:flex;
+}
+.pm-slide-viewport {
+  flex:1; overflow-y:auto; display:flex; flex-direction:column;
+  padding:0 58px; /* room for floating nav buttons */
+}
+.pm-slide-inner {
+  flex:1; display:flex; align-items:center; justify-content:center;
+  padding:40px 48px; box-sizing:border-box;
 }
 .pm-slide-wrap {
   width:100%; max-width:860px;
@@ -368,13 +375,11 @@ mark.search-hl { background:#fef08a; color:inherit; border-radius:2px; padding:0
 }
 .pm-slide-date { font-family:var(--ff-mono); font-size:12px; color:var(--muted2); white-space:nowrap; }
 
-/* Titles — per template */
+/* Titles — same size across all templates; only shrinks at mobile breakpoint */
 .pm-title { font-family:var(--ff-display); font-weight:700; line-height:1.2; color:var(--text); margin-bottom:20px; }
-.pm-title-std  { font-size:clamp(22px,3.8vw,44px); }
-.pm-title-det1 { font-size:clamp(19px,2.8vw,30px); }
-.pm-title-det2 { font-size:clamp(17px,2.4vw,26px); }
-.pm-title-det3 { font-size:clamp(16px,2.1vw,23px); }
-.pm-title-detov { font-size:clamp(15px,2vw,22px); }
+.pm-title-std, .pm-title-det1, .pm-title-det2, .pm-title-det3, .pm-title-detov {
+  font-size:clamp(22px,3.5vw,44px);
+}
 
 /* Body */
 .pm-body { font-size:clamp(14px,1.6vw,18px); color:var(--muted2); line-height:1.75; white-space:pre-wrap; margin-bottom:20px; }
@@ -424,13 +429,19 @@ mark.search-hl { background:#fef08a; color:inherit; border-radius:2px; padding:0
 }
 .pm-nav-btn {
   width:34px; height:34px; border-radius:50%;
-  background:var(--s2); border:1px solid var(--border2);
+  background:#fff; border:1px solid var(--border2);
   color:var(--text); font-size:16px; cursor:pointer;
   display:flex; align-items:center; justify-content:center;
   flex-shrink:0; transition:all 0.15s; padding:0;
+  box-shadow:0 2px 8px rgba(0,0,0,0.1);
 }
-.pm-nav-btn:hover:not(:disabled) { background:var(--s3); }
-.pm-nav-btn:disabled { opacity:0.2; cursor:not-allowed; }
+.pm-nav-btn:hover:not(:disabled) { background:var(--s2); border-color:var(--muted2); }
+.pm-nav-btn:disabled { opacity:0.15; cursor:not-allowed; }
+.pm-nav-prev, .pm-nav-next {
+  position:absolute; top:50%; transform:translateY(-50%); z-index:10;
+}
+.pm-nav-prev { left:12px; }
+.pm-nav-next { right:12px; }
 .pm-progress-wrap { flex:1; display:flex; flex-direction:column; align-items:center; gap:4px; }
 .pm-progress-track { width:100%; height:3px; background:var(--s3); border-radius:2px; overflow:hidden; }
 .pm-progress-fill { height:100%; background:var(--accent); transition:width 0.25s ease; border-radius:2px; }
@@ -672,6 +683,25 @@ mark.search-hl { background:#fef08a; color:inherit; border-radius:2px; padding:0
 .milestone-description { font-size:13px; color:var(--muted2); line-height:1.55; margin-top:3px; white-space:pre-wrap; }
 .milestone-form { background:var(--s2); border:1px solid var(--border2); border-radius:8px; padding:14px; margin-bottom:16px; }
 .milestone-form-grid { display:grid; grid-template-columns:1fr 1fr; gap:10px; margin-bottom:10px; }
+
+/* PRESENTATION — responsive */
+@media (max-width:1024px) {
+  .pm-slide-inner { padding:28px 32px; }
+}
+@media (min-width:768px) and (max-width:900px) {
+  .pm-sections-3col { grid-template-columns:1fr 1fr; }
+}
+@media (max-width:767px) {
+  .pm-slide-viewport { padding:0 44px; }
+  .pm-slide-inner { padding:20px 16px; }
+  .pm-nav-prev { left:4px; }
+  .pm-nav-next { right:4px; }
+  .pm-title-std, .pm-title-det1, .pm-title-det2, .pm-title-det3, .pm-title-detov { font-size:18px; }
+  .pm-body { font-size:14px; }
+  .pm-sections-2col, .pm-sections-3col { grid-template-columns:1fr; }
+  .pm-top-bar { padding:0 12px; gap:8px; }
+  .pm-wordmark { display:none; }
+}
 `;
 
 export default CSS;
