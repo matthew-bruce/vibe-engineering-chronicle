@@ -27,6 +27,10 @@ export const PROJECTS = [
   'Vibe Engineering Strategy',
 ];
 
+export const CARD_FORMATS = [
+  { value: 'fact_or_fiction', label: 'Fact or Fiction' },
+];
+
 export const toggleTheme = (themes, id) =>
   themes.includes(id) ? themes.filter(t => t !== id) : [...themes, id];
 

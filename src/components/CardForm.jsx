@@ -1,4 +1,4 @@
-import { THEMES, toggleTheme, today } from '../constants.js';
+import { THEMES, CARD_FORMATS, toggleTheme, today } from '../constants.js';
 import { cats } from '../../lib/cats.js';
 
 export const blankForm = () => ({
@@ -10,6 +10,7 @@ export const blankForm = () => ({
   benefit: '',
   impact: null,
   audience: null,
+  format: null,
   sections: [],
 });
 
@@ -93,6 +94,19 @@ export default function CardForm({ form, onChange }) {
         >
           <option value="">— none —</option>
           {AUDIENCE_OPTIONS.map(o => (
+            <option key={o.value} value={o.value}>{o.label}</option>
+          ))}
+        </select>
+      </div>
+      <div>
+        <div className="form-label">Format <span style={{ opacity: 0.5, fontWeight: 400 }}>(optional)</span></div>
+        <select
+          className="form-select"
+          value={form.format ?? ''}
+          onChange={e => f('format', e.target.value || null)}
+        >
+          <option value="">— none —</option>
+          {CARD_FORMATS.map(o => (
             <option key={o.value} value={o.value}>{o.label}</option>
           ))}
         </select>

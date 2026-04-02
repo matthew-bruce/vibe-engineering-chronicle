@@ -6,7 +6,7 @@ import {
   addTimelineEntry, updateTimelineEntry, softDeleteCard,
   addSession, updateSession, softDeleteSession,
 } from '../lib/db.js';
-import { THEMES } from './constants.js';
+import { THEMES, CARD_FORMATS } from './constants.js';
 import { cats } from '../lib/cats.js';
 import CSS from './styles.js';
 import PresentMode from './components/PresentMode.jsx';
@@ -22,11 +22,13 @@ export default function App() {
   const [presenting, setPresenting] = useState(false);
   const [showPfPanel, setShowPfPanel] = useState(false);
   const [searchParams, setSearchParams] = useSearchParams();
-  const filterCat   = searchParams.get('category') || 'all';
-  const filterTheme = searchParams.get('theme')    || 'all';
+  const filterCat    = searchParams.get('category') || 'all';
+  const filterTheme  = searchParams.get('theme')    || 'all';
+  const filterFormat = searchParams.get('format')   || 'all';
   const [pfCats, setPfCats] = useState([]);
   const [pfThemes, setPfThemes] = useState(() => THEMES.map(t => t.id));
   const [pfSignalOnly, setPfSignalOnly] = useState(false);
+  const [pfFormatOnly, setPfFormatOnly] = useState(false);
   const [viewMode, setViewMode] = useState('standard');
 
   useEffect(() => {
@@ -108,6 +110,14 @@ export default function App() {
     });
   }, [setSearchParams]);
 
+  const setFilterFormat = useCallback(val => {
+    setSearchParams(prev => {
+      const next = new URLSearchParams(prev);
+      if (val === 'all') next.delete('format'); else next.set('format', val);
+      return next;
+    });
+  }, [setSearchParams]);
+
   const byDateDesc = (a, b) =>
     new Date(b.date) - new Date(a.date) || b.createdAt - a.createdAt;
 
@@ -115,6 +125,7 @@ export default function App() {
     .filter(e => {
       if (filterCat !== 'all' && e.category !== filterCat) return false;
       if (filterTheme !== 'all' && !(e.themes || []).includes(filterTheme)) return false;
+      if (filterFormat !== 'all' && e.format !== filterFormat) return false;
       return true;
     })
     .sort(byDateDesc);
@@ -126,6 +137,7 @@ export default function App() {
     if (pfSignalOnly && !(e.themes || []).includes('signal')) return false;
     const et = e.themes || [];
     if (pfThemes.length < THEMES.length && et.length > 0 && !et.some(t => pfThemes.includes(t))) return false;
+    if (pfFormatOnly && e.format !== 'fact_or_fiction') return false;
     return true;
   });
 
@@ -181,12 +193,13 @@ export default function App() {
                       <div className="pf-chips">
                         {(() => {
                           const allCatKeys = Object.keys(cats);
-                          const allOn = allCatKeys.every(k => pfCats.includes(k));
+                          const allOn  = allCatKeys.every(k => pfCats.includes(k));
+                          const noneOn = pfCats.length === 0;
                           return (
-                            <button
-                              className={`pf-chip ${allOn ? 'on' : ''}`}
-                              onClick={() => setPfCats(allOn ? [] : allCatKeys)}
-                            >All Categories</button>
+                            <>
+                              <button className={`pf-chip ${allOn ? 'on' : ''}`} onClick={() => setPfCats(allCatKeys)}>All</button>
+                              <button className={`pf-chip ${noneOn ? 'on' : ''}`} onClick={() => setPfCats([])}>None</button>
+                            </>
                           );
                         })()}
                         {Object.entries(cats).map(([k, v]) => (
@@ -201,12 +214,13 @@ export default function App() {
                       <div className="pf-section-label">Themes</div>
                       <div className="pf-chips">
                         {(() => {
-                          const allOn = THEMES.every(t => pfThemes.includes(t.id));
+                          const allOn  = THEMES.every(t => pfThemes.includes(t.id));
+                          const noneOn = pfThemes.length === 0;
                           return (
-                            <button
-                              className={`pf-chip ${allOn ? 'on' : ''}`}
-                              onClick={() => setPfThemes(allOn ? [] : THEMES.map(t => t.id))}
-                            >All Themes</button>
+                            <>
+                              <button className={`pf-chip ${allOn ? 'on' : ''}`} onClick={() => setPfThemes(THEMES.map(t => t.id))}>All</button>
+                              <button className={`pf-chip ${noneOn ? 'on' : ''}`} onClick={() => setPfThemes([])}>None</button>
+                            </>
                           );
                         })()}
                         {THEMES.map(t => (
@@ -215,6 +229,15 @@ export default function App() {
                             onClick={() => togglePfTheme(t.id)}
                           >{t.label}</button>
                         ))}
+                      </div>
+                    </div>
+                    <div className="pf-section">
+                      <div className="pf-section-label">Format</div>
+                      <div className="pf-chips">
+                        <button className={`pf-chip ${pfFormatOnly ? 'on' : ''}`}
+                          style={pfFormatOnly ? { borderColor: 'var(--accent)', color: 'var(--accent)' } : {}}
+                          onClick={() => setPfFormatOnly(s => !s)}
+                        >⊗ Fact or Fiction only</button>
                       </div>
                     </div>
                     <div className="pf-section" style={{ marginBottom: 0 }}>
@@ -255,6 +278,8 @@ export default function App() {
                 setFilterCat={setFilterCat}
                 filterTheme={filterTheme}
                 setFilterTheme={setFilterTheme}
+                filterFormat={filterFormat}
+                setFilterFormat={setFilterFormat}
                 onAdd={addTl}
                 onUpdate={updateTl}
                 onDelete={delTl}

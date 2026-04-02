@@ -18,13 +18,14 @@ describe('blankForm()', () => {
     expect(blankForm().themes).toEqual([]);
   });
 
-  it('has empty title, body, and benefit; null impact and audience', () => {
+  it('has empty title, body, and benefit; null impact, audience, and format', () => {
     const f = blankForm();
     expect(f.title).toBe('');
     expect(f.body).toBe('');
     expect(f.benefit).toBe('');
     expect(f.impact).toBeNull();
     expect(f.audience).toBeNull();
+    expect(f.format).toBeNull();
   });
 
   it('produces a new object each call (not a shared reference)', () => {
@@ -71,9 +72,18 @@ describe('CardForm rendering', () => {
     expect(screen.getByPlaceholderText(/saves 6 weeks/i)).toBeInTheDocument();
   });
 
-  it('renders category and audience selects', () => {
+  it('renders category, audience, and format selects', () => {
     renderForm();
-    expect(screen.getAllByRole('combobox')).toHaveLength(2);
+    expect(screen.getAllByRole('combobox')).toHaveLength(3);
+  });
+
+  it('renders the format select with a none option', () => {
+    renderForm();
+    const selects = screen.getAllByRole('combobox');
+    const formatSelect = selects[2]; // third select: format
+    const options = Array.from(formatSelect.options).map(o => o.value);
+    expect(options).toContain('');
+    expect(options).toContain('fact_or_fiction');
   });
 
   it('category select does not include "session" or "capture" options', () => {
@@ -172,6 +182,20 @@ describe('CardForm onChange callbacks', () => {
     const [, audSelect] = screen.getAllByRole('combobox');
     fireEvent.change(audSelect, { target: { value: 'leadership' } });
     expect(onChange).toHaveBeenCalledWith('audience', 'leadership');
+  });
+
+  it('calls onChange with (format, value) when format select changes', () => {
+    const { onChange } = renderForm();
+    const [,, fmtSelect] = screen.getAllByRole('combobox');
+    fireEvent.change(fmtSelect, { target: { value: 'fact_or_fiction' } });
+    expect(onChange).toHaveBeenCalledWith('format', 'fact_or_fiction');
+  });
+
+  it('calls onChange with (format, null) when format is cleared', () => {
+    const { onChange } = renderForm({ format: 'fact_or_fiction' });
+    const [,, fmtSelect] = screen.getAllByRole('combobox');
+    fireEvent.change(fmtSelect, { target: { value: '' } });
+    expect(onChange).toHaveBeenCalledWith('format', null);
   });
 
   it('calls onChange with (benefit, value) when benefit input changes', () => {

@@ -1,8 +1,7 @@
 import { useState, useEffect } from 'react';
-import { THEMES, uid, fmtDate } from '../constants.js';
+import { THEMES, CARD_FORMATS, uid, fmtDate } from '../constants.js';
 import { cats } from '../../lib/cats.js';
 import CardForm, { blankForm } from './CardForm.jsx';
-import QuickCapture from './QuickCapture.jsx';
 
 function escapeRegex(s) {
   return s.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
@@ -37,7 +36,7 @@ function Highlight({ text, term }) {
   );
 }
 
-export default function Timeline({ entries, allCount, filterCat, setFilterCat, filterTheme, setFilterTheme, onAdd, onUpdate, onDelete, viewMode = 'standard' }) {
+export default function Timeline({ entries, allCount, filterCat, setFilterCat, filterTheme, setFilterTheme, filterFormat, setFilterFormat, onAdd, onUpdate, onDelete, viewMode = 'standard' }) {
   const [show, setShow] = useState(false);
   const [form, setForm] = useState(blankForm);
   const [editId, setEditId] = useState(null);
@@ -102,8 +101,6 @@ export default function Timeline({ entries, allCount, filterCat, setFilterCat, f
         </div>
       )}
 
-      <QuickCapture onAdd={onAdd} />
-
       <div className="tl-search-wrap">
         <input
           className="tl-search-input"
@@ -130,6 +127,13 @@ export default function Timeline({ entries, allCount, filterCat, setFilterCat, f
           <button key={t.id} className={`fchip fchip-sm ${filterTheme === t.id ? 'on' : ''}`} onClick={() => setFilterTheme(t.id)}
             style={filterTheme === t.id ? { borderColor: t.color, color: t.color } : {}}
           >{t.label}</button>
+        ))}
+      </div>
+      <div className="filter-row filter-row-themes">
+        <button className={`fchip fchip-sm ${filterFormat === 'all' ? 'on' : ''}`} onClick={() => setFilterFormat('all')}>All formats</button>
+        {CARD_FORMATS.map(f => (
+          <button key={f.value} className={`fchip fchip-sm ${filterFormat === f.value ? 'on' : ''}`} onClick={() => setFilterFormat(f.value)}
+          >{f.label}</button>
         ))}
       </div>
 
