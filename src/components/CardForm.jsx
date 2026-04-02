@@ -1,4 +1,5 @@
-import { CATS, THEMES, toggleTheme, today } from '../constants.js';
+import { THEMES, toggleTheme, today } from '../constants.js';
+import { cats } from '../../lib/cats.js';
 
 export const blankForm = () => ({
   title: '',
@@ -7,12 +8,22 @@ export const blankForm = () => ({
   category: 'wow',
   themes: [],
   benefit: '',
+  impact: null,
+  audience: null,
+  sections: [],
 });
+
+const AUDIENCE_OPTIONS = [
+  { value: 'beginner',     label: 'Beginner' },
+  { value: 'practitioner', label: 'Practitioner' },
+  { value: 'leadership',   label: 'Leadership' },
+  { value: 'universal',    label: 'Universal' },
+];
 
 export default function CardForm({ form, onChange }) {
   const f = (k, v) => onChange(k, v);
-  const catOptions = Object.entries(CATS).filter(([k]) => k !== 'session');
-  const activeCat = CATS[form.category] || CATS.wow;
+  const catOptions = Object.entries(cats).filter(([k]) => k !== 'session' && k !== 'capture');
+  const activeCat = cats[form.category] || cats.wow;
 
   return (
     <div className="form-grid">
@@ -58,6 +69,34 @@ export default function CardForm({ form, onChange }) {
           </select>
         </div>
       </div>
+      <div>
+        <div className="form-label">Impact</div>
+        <div className="impact-selector">
+          {[1, 2, 3, 4, 5].map(n => (
+            <button
+              key={n}
+              type="button"
+              className={`impact-dot ${(form.impact ?? 0) >= n ? 'filled' : ''}`}
+              onClick={() => f('impact', form.impact === n ? null : n)}
+              title={`Impact ${n}`}
+            />
+          ))}
+          {form.impact && <span className="impact-value">{form.impact}/5</span>}
+        </div>
+      </div>
+      <div>
+        <div className="form-label">Audience</div>
+        <select
+          className="form-select"
+          value={form.audience ?? ''}
+          onChange={e => f('audience', e.target.value || null)}
+        >
+          <option value="">— none —</option>
+          {AUDIENCE_OPTIONS.map(o => (
+            <option key={o.value} value={o.value}>{o.label}</option>
+          ))}
+        </select>
+      </div>
       <div className="form-grid-full">
         <div className="form-label">Themes</div>
         <div className="theme-select-row">
@@ -75,7 +114,7 @@ export default function CardForm({ form, onChange }) {
       </div>
       <div className="form-grid-full">
         <div className="form-label">
-          Benefit / so what? <span style={{ opacity: 0.5, fontWeight: 400 }}>(optional)</span>
+          Quick benefit note <span style={{ opacity: 0.5, fontWeight: 400 }}>(optional)</span>
         </div>
         <input
           className="form-input"
@@ -83,6 +122,53 @@ export default function CardForm({ form, onChange }) {
           value={form.benefit}
           onChange={e => f('benefit', e.target.value)}
         />
+      </div>
+      <div className="form-grid-full">
+        <div className="linked-benefits-placeholder">
+          <span className="linked-benefits-label">Linked Benefits</span>
+          Formal benefits tracking coming soon — use the quick note above for now.
+        </div>
+      </div>
+      <div className="form-grid-full">
+        <div className="form-label">
+          Sections <span style={{ opacity: 0.5, fontWeight: 400 }}>(optional detail blocks)</span>
+        </div>
+        {(form.sections || []).map((s, i) => (
+          <div key={i} className="section-form-item">
+            <input
+              className="form-input"
+              placeholder="Section label (e.g. What changed)"
+              value={s.label}
+              onChange={e => {
+                const sections = [...form.sections];
+                sections[i] = { ...sections[i], label: e.target.value };
+                f('sections', sections);
+              }}
+            />
+            <textarea
+              className="form-textarea"
+              placeholder="Section body…"
+              value={s.body}
+              onChange={e => {
+                const sections = [...form.sections];
+                sections[i] = { ...sections[i], body: e.target.value };
+                f('sections', sections);
+              }}
+            />
+            <button
+              type="button"
+              className="btn btn-ghost btn-sm"
+              style={{ alignSelf: 'flex-start', marginTop: 2 }}
+              onClick={() => f('sections', form.sections.filter((_, j) => j !== i))}
+            >Remove</button>
+          </div>
+        ))}
+        <button
+          type="button"
+          className="btn btn-ghost btn-sm"
+          style={{ marginTop: 6, alignSelf: 'flex-start' }}
+          onClick={() => f('sections', [...(form.sections || []), { label: '', body: '', order: (form.sections || []).length }])}
+        >+ Add section</button>
       </div>
     </div>
   );

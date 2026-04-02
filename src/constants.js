@@ -6,6 +6,7 @@ export const CATS = {
   aspiration: { label: 'Aspiration / Goal', color: '#E86161', glyph: '◎' },
   ideas:      { label: 'Idea / Wishlist',   color: '#A78BFA', glyph: '◐' },
   session:    { label: 'Session',           color: '#34D4D4', glyph: '◷' },
+  capture:    { label: 'Capture',           color: '#9ca3af', glyph: '◌' },
 };
 
 export const THEMES = [

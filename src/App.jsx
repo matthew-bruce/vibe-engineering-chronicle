@@ -1,43 +1,44 @@
 import { useState, useEffect, useCallback } from 'react';
+import { Routes, Route, NavLink, Navigate, useSearchParams } from 'react-router-dom';
 import {
   initLookups,
-  loadTimeline, loadCaptures, loadSessions,
-  addTimelineEntry, updateTimelineEntry, softDeleteCard, addCapture,
+  loadTimeline, loadSessions,
+  addTimelineEntry, updateTimelineEntry, softDeleteCard,
   addSession, updateSession, softDeleteSession,
 } from '../lib/db.js';
-import { CATS, THEMES, today } from './constants.js';
+import { THEMES } from './constants.js';
+import { cats } from '../lib/cats.js';
 import CSS from './styles.js';
 import PresentMode from './components/PresentMode.jsx';
 import Timeline from './components/Timeline.jsx';
-import Capture from './components/Capture.jsx';
 import Sessions from './components/Sessions.jsx';
 import Projects from './components/Projects.jsx';
 
 export default function App() {
-  const [tab, setTab] = useState('timeline');
   const [tl, setTl] = useState([]);
-  const [cap, setCap] = useState([]);
   const [sessions, setSessions] = useState([]);
   const [ready, setReady] = useState(false);
   const [loadError, setLoadError] = useState(null);
   const [presenting, setPresenting] = useState(false);
-  const [filterCat, setFilterCat] = useState('all');
   const [showPfPanel, setShowPfPanel] = useState(false);
-  const [pfCats, setPfCats] = useState(() => Object.keys(CATS));
+  const [searchParams, setSearchParams] = useSearchParams();
+  const filterCat   = searchParams.get('category') || 'all';
+  const filterTheme = searchParams.get('theme')    || 'all';
+  const [pfCats, setPfCats] = useState([]);
   const [pfThemes, setPfThemes] = useState(() => THEMES.map(t => t.id));
   const [pfSignalOnly, setPfSignalOnly] = useState(false);
+  const [viewMode, setViewMode] = useState('standard');
 
   useEffect(() => {
     async function boot() {
       try {
         await initLookups();
-        const [tlData, capData, sesData] = await Promise.all([
+        setPfCats(Object.keys(cats));
+        const [tlData, sesData] = await Promise.all([
           loadTimeline(),
-          loadCaptures(),
           loadSessions(),
         ]);
         setTl(tlData);
-        setCap(capData);
         setSessions(sesData);
       } catch (err) {
         console.error('[Chronicle] Supabase load failed:', err);
@@ -70,20 +71,6 @@ export default function App() {
     } catch (err) { console.error('[Chronicle] delTl failed:', err); }
   }, []);
 
-  const addCap = useCallback(async entry => {
-    try {
-      const saved = await addCapture(entry);
-      setCap(p => [saved, ...p]);
-    } catch (err) { console.error('[Chronicle] addCap failed:', err); }
-  }, []);
-
-  const delCap = useCallback(async id => {
-    try {
-      await softDeleteCard(id);
-      setCap(p => p.filter(e => e.id !== id));
-    } catch (err) { console.error('[Chronicle] delCap failed:', err); }
-  }, []);
-
   const addSes = useCallback(async entry => {
     try {
       const saved = await addSession(entry);
@@ -105,31 +92,35 @@ export default function App() {
     } catch (err) { console.error('[Chronicle] updateSes failed:', err); }
   }, []);
 
-  const promote = useCallback(async (capture) => {
-    const entry = {
-      title:    capture.text.length > 80 ? capture.text.slice(0, 78) + '…' : capture.text,
-      body:     capture.source ? `${capture.text}\n\n— ${capture.source}` : capture.text,
-      date:     today(),
-      category: 'learning',
-      themes:   capture.themes ?? [],
-      benefit:  '',
-    };
-    try {
-      const [saved] = await Promise.all([
-        addTimelineEntry(entry),
-        softDeleteCard(capture.id),
-      ]);
-      setTl(p => [...p, saved]);
-      setCap(p => p.filter(e => e.id !== capture.id));
-      setTab('timeline');
-    } catch (err) { console.error('[Chronicle] promote failed:', err); }
-  }, []);
+  const setFilterCat = useCallback(slug => {
+    setSearchParams(prev => {
+      const next = new URLSearchParams(prev);
+      if (slug === 'all') next.delete('category'); else next.set('category', slug);
+      return next;
+    });
+  }, [setSearchParams]);
+
+  const setFilterTheme = useCallback(slug => {
+    setSearchParams(prev => {
+      const next = new URLSearchParams(prev);
+      if (slug === 'all') next.delete('theme'); else next.set('theme', slug);
+      return next;
+    });
+  }, [setSearchParams]);
+
+  const byDateDesc = (a, b) =>
+    new Date(b.date) - new Date(a.date) || b.createdAt - a.createdAt;
 
   const sorted = [...tl]
-    .filter(e => filterCat === 'all' || e.category === filterCat)
-    .sort((a, b) => new Date(b.date) - new Date(a.date));
+    .filter(e => {
+      if (filterCat !== 'all' && e.category !== filterCat) return false;
+      if (filterTheme !== 'all' && !(e.themes || []).includes(filterTheme)) return false;
+      return true;
+    })
+    .sort(byDateDesc);
 
-  const allSorted = [...tl].sort((a, b) => new Date(a.date) - new Date(b.date));
+  const allSorted = [...tl].sort((a, b) =>
+    new Date(a.date) - new Date(b.date) || a.createdAt - b.createdAt);
   const presentFiltered = allSorted.filter(e => {
     if (!pfCats.includes(e.category)) return false;
     if (pfSignalOnly && !(e.themes || []).includes('signal')) return false;
@@ -166,13 +157,18 @@ export default function App() {
           <div className="hdr-left">
             <div className="hdr-glyph">⟡</div>
             <div>
-              <div className="hdr-title">Vibe Coded</div>
-              <div className="hdr-sub">A personal chronicle · {tl.length} entries</div>
+              <div className="hdr-title">Chronicle</div>
+              <div className="hdr-sub">{tl.length} {tl.length === 1 ? 'card' : 'cards'}</div>
             </div>
           </div>
           <div className="hdr-right">
             {tl.length > 0 && (
               <div className="pf-anchor">
+                <button
+                  className={`btn btn-ghost btn-sm ${viewMode === 'detailed' ? 'view-toggle-on' : ''}`}
+                  onClick={() => setViewMode(m => m === 'standard' ? 'detailed' : 'standard')}
+                  title="Toggle standard / detailed view"
+                >{viewMode === 'detailed' ? '⊟ Standard' : '⊞ Detailed'}</button>
                 <button
                   className={`btn btn-filter btn-sm ${showPfPanel ? 'on' : ''}`}
                   onClick={() => setShowPfPanel(s => !s)}
@@ -183,7 +179,17 @@ export default function App() {
                     <div className="pf-section">
                       <div className="pf-section-label">Categories</div>
                       <div className="pf-chips">
-                        {Object.entries(CATS).map(([k, v]) => (
+                        {(() => {
+                          const allCatKeys = Object.keys(cats);
+                          const allOn = allCatKeys.every(k => pfCats.includes(k));
+                          return (
+                            <button
+                              className={`pf-chip ${allOn ? 'on' : ''}`}
+                              onClick={() => setPfCats(allOn ? [] : allCatKeys)}
+                            >All Categories</button>
+                          );
+                        })()}
+                        {Object.entries(cats).map(([k, v]) => (
                           <button key={k} className={`pf-chip ${pfCats.includes(k) ? 'on' : ''}`}
                             style={pfCats.includes(k) ? { borderColor: v.color, color: v.color } : {}}
                             onClick={() => togglePfCat(k)}
@@ -194,6 +200,15 @@ export default function App() {
                     <div className="pf-section">
                       <div className="pf-section-label">Themes</div>
                       <div className="pf-chips">
+                        {(() => {
+                          const allOn = THEMES.every(t => pfThemes.includes(t.id));
+                          return (
+                            <button
+                              className={`pf-chip ${allOn ? 'on' : ''}`}
+                              onClick={() => setPfThemes(allOn ? [] : THEMES.map(t => t.id))}
+                            >All Themes</button>
+                          );
+                        })()}
                         {THEMES.map(t => (
                           <button key={t.id} className={`pf-chip ${pfThemes.includes(t.id) ? 'on' : ''}`}
                             style={pfThemes.includes(t.id) ? { borderColor: t.color, color: t.color } : {}}
@@ -222,45 +237,42 @@ export default function App() {
                 )}
               </div>
             )}
-            <div className="tabs">
-              <button className={`tab ${tab === 'timeline' ? 'on' : ''}`} onClick={() => setTab('timeline')}>Timeline</button>
-              <button className={`tab ${tab === 'sessions' ? 'on' : ''}`} onClick={() => setTab('sessions')}>Sessions</button>
-              <button className={`tab ${tab === 'projects' ? 'on' : ''}`} onClick={() => setTab('projects')}>Projects</button>
-              <button className={`tab ${tab === 'capture' ? 'on' : ''}`} onClick={() => setTab('capture')}>
-                Capture {cap.length > 0 && <span className="badge">{cap.length}</span>}
-              </button>
-            </div>
+            <nav className="tabs">
+              <NavLink className={({ isActive }) => `tab${isActive ? ' on' : ''}`} to="/timeline" end>Timeline</NavLink>
+              <NavLink className={({ isActive }) => `tab${isActive ? ' on' : ''}`} to="/sessions">Sessions</NavLink>
+              <NavLink className={({ isActive }) => `tab${isActive ? ' on' : ''}`} to="/projects">Projects</NavLink>
+            </nav>
           </div>
         </header>
         <main className="main">
-          {tab === 'timeline' ? (
-            <Timeline
-              entries={sorted}
-              allCount={tl.length}
-              filterCat={filterCat}
-              setFilterCat={setFilterCat}
-              onAdd={addTl}
-              onUpdate={updateTl}
-              onDelete={delTl}
-            />
-          ) : tab === 'sessions' ? (
-            <Sessions
-              sessions={sessions}
-              onAdd={addSes}
-              onUpdate={updateSes}
-              onDelete={delSes}
-              onAddTl={addTl}
-            />
-          ) : tab === 'projects' ? (
-            <Projects />
-          ) : (
-            <Capture
-              entries={cap}
-              onAdd={addCap}
-              onDelete={delCap}
-              onPromote={promote}
-            />
-          )}
+          <Routes>
+            <Route index element={<Navigate to="/timeline" replace />} />
+            <Route path="/timeline" element={
+              <Timeline
+                entries={sorted}
+                allCount={tl.length}
+                filterCat={filterCat}
+                setFilterCat={setFilterCat}
+                filterTheme={filterTheme}
+                setFilterTheme={setFilterTheme}
+                onAdd={addTl}
+                onUpdate={updateTl}
+                onDelete={delTl}
+                viewMode={viewMode}
+              />
+            } />
+            <Route path="/sessions" element={
+              <Sessions
+                sessions={sessions}
+                onAdd={addSes}
+                onUpdate={updateSes}
+                onDelete={delSes}
+                onAddTl={addTl}
+              />
+            } />
+            <Route path="/projects" element={<Projects />} />
+            <Route path="*" element={<Navigate to="/timeline" replace />} />
+          </Routes>
         </main>
       </div>
     </>
