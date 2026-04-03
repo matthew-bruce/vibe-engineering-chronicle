@@ -9,6 +9,9 @@
  * Snapshots the card before writing any enrichment so every enrichment
  * can be rolled back via the version history UI.
  *
+ * Skip condition: card_relevance === 'evergreen' (regardless of source).
+ * Versioning is the safety net — not field-level locks.
+ *
  * Returns HTTP 200 even on error to prevent Supabase webhook retry storms.
  * All errors are logged to console.
  */
@@ -29,8 +32,7 @@ const VALID_THEMES    = ['Industry', 'Economics', 'Org Design', 'Evidence', 'Lea
 async function snapshotCard(
   supabase: ReturnType<typeof createClient>,
   cardId: string,
-  versionedBy: 'user' | 'enrichment_engine',
-  versionNote: string
+  enrichedAt: string,
 ): Promise<void> {
   try {
     const [cardRes, catsRes, themesRes, sectionsRes] = await Promise.all([
@@ -82,8 +84,8 @@ async function snapshotCard(
       card_id:        cardId,
       version_number: nextVersionNumber,
       card_snapshot:  snapshot,
-      versioned_by:   versionedBy,
-      version_note:   versionNote,
+      versioned_by:   'enrichment_engine',
+      version_note:   `Pre-enrichment snapshot · enrichment_engine · ${enrichedAt}`,
     });
     if (insertErr) { console.warn('[enrich-card] snapshot insert failed:', insertErr); return; }
 
@@ -148,7 +150,7 @@ Deno.serve(async (req: Request) => {
     return new Response(null, { headers: { 'Access-Control-Allow-Origin': '*', 'Access-Control-Allow-Headers': 'authorization, content-type' } });
   }
 
-  const supabase = createClient(SUPABASE_URL, SERVICE_ROLE_KEY);
+  const supabase  = createClient(SUPABASE_URL, SERVICE_ROLE_KEY);
   const anthropic = new Anthropic({ apiKey: ANTHROPIC_API_KEY });
 
   try {
@@ -160,9 +162,14 @@ Deno.serve(async (req: Request) => {
       return new Response(JSON.stringify({ error: 'Missing card_id' }), { status: 200 });
     }
 
-    // Skip enrichment for cards with no meaningful content
+    // Skip cards with no meaningful content
     if (!card.card_title) {
       return new Response(JSON.stringify({ skipped: true, reason: 'no title' }), { status: 200 });
+    }
+
+    // Skip only evergreen cards — versioning is the safety net, not field locks
+    if (card.card_relevance === 'evergreen') {
+      return new Response(JSON.stringify({ skipped: true, reason: 'evergreen' }), { status: 200 });
     }
 
     // Fetch sections for richer context
@@ -177,8 +184,10 @@ Deno.serve(async (req: Request) => {
       .map((s: Record<string, string>) => `${s.section_label}: ${s.section_body ?? ''}`)
       .join('\n');
 
+    const enrichedAt = new Date().toISOString();
+
     // Snapshot before any enrichment write
-    await snapshotCard(supabase, cardId, 'enrichment_engine', 'Pre-enrichment snapshot');
+    await snapshotCard(supabase, cardId, enrichedAt);
 
     const response = await anthropic.messages.create({
       model: 'claude-sonnet-4-6',
@@ -190,21 +199,17 @@ Deno.serve(async (req: Request) => {
     const parsed = parseResponse(text);
     if (!parsed) throw new Error(`Failed to parse Claude response: ${text}`);
 
-    // Build update — respect human-locked fields
+    // Write all enrichment fields — no human-source locks
     const update: Record<string, unknown> = {
-      card_ai_themes:   parsed.themes,
-      card_ai_audience: parsed.audience,
-      card_ai_summary:  parsed.summary,
-      card_enriched_at: new Date().toISOString(),
+      card_impact:           parsed.impact,
+      card_impact_source:    'enrichment_engine',
+      card_relevance:        parsed.relevance,
+      card_relevance_source: 'enrichment_engine',
+      card_ai_themes:        parsed.themes,
+      card_ai_audience:      parsed.audience,
+      card_ai_summary:       parsed.summary,
+      card_enriched_at:      enrichedAt,
     };
-    if (card.card_impact_source !== 'human') {
-      update.card_impact        = parsed.impact;
-      update.card_impact_source = 'ai';
-    }
-    if (card.card_relevance_source !== 'human') {
-      update.card_relevance        = parsed.relevance;
-      update.card_relevance_source = 'ai';
-    }
 
     const { error: updateErr } = await supabase.from('cards').update(update).eq('card_id', cardId);
     if (updateErr) throw updateErr;
