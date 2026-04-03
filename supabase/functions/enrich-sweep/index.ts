@@ -195,18 +195,21 @@ async function enrichOne(
 // ─── Handler ──────────────────────────────────────────────────────────────────
 
 Deno.serve(async (req: Request) => {
-  if (req.method === 'OPTIONS') {
-    return new Response(null, {
-      headers: { 'Access-Control-Allow-Origin': '*', 'Access-Control-Allow-Headers': 'authorization, content-type' },
-    });
-  }
-
-  const supabase  = createClient(SUPABASE_URL, SERVICE_ROLE_KEY);
-  const anthropic = new Anthropic({ apiKey: ANTHROPIC_API_KEY });
+  console.log('[enrich-sweep] handler reached — method:', req.method);
 
   try {
+    if (req.method === 'OPTIONS') {
+      return new Response(null, {
+        headers: { 'Access-Control-Allow-Origin': '*', 'Access-Control-Allow-Headers': 'authorization, content-type' },
+      });
+    }
+
+    const supabase  = createClient(SUPABASE_URL, SERVICE_ROLE_KEY);
+    const anthropic = new Anthropic({ apiKey: ANTHROPIC_API_KEY });
+
     const body = await req.json().catch(() => ({}));
     const mode = (body.mode === 'scheduled') ? 'scheduled' : 'demand';
+    console.log('[enrich-sweep] mode:', mode);
 
     // On-demand: only cards never enriched (fill-in-blanks pass).
     // Scheduled: all non-deleted cards — full refresh, shouldSkip handles evergreen.
@@ -235,8 +238,7 @@ Deno.serve(async (req: Request) => {
       headers: { 'Content-Type': 'application/json' },
     });
   } catch (err) {
-    const msg = err instanceof Error ? err.message : String(err);
-    console.error('[enrich-sweep] fatal error:', msg);
-    return new Response(JSON.stringify({ error: msg }), { status: 500 });
+    console.error('[enrich-sweep] fatal error — full error object:', err);
+    throw err;
   }
 });
