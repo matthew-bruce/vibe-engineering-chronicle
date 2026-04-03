@@ -3,6 +3,13 @@ import { THEMES, CARD_FORMATS, uid, fmtDate } from '../constants.js';
 import { cats } from '../../lib/cats.js';
 import CardForm, { blankForm } from './CardForm.jsx';
 
+const RELEVANCE_COLOR = {
+  current:  '#52C788',
+  review:   '#F5A623',
+  dated:    '#9ca3af',
+  evergreen: '#4A9EDB',
+};
+
 function escapeRegex(s) {
   return s.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
 }
@@ -36,7 +43,83 @@ function Highlight({ text, term }) {
   );
 }
 
-export default function Timeline({ entries, allCount, filterCat, setFilterCat, filterTheme, setFilterTheme, filterFormat, setFilterFormat, onAdd, onUpdate, onDelete, viewMode = 'standard' }) {
+function AiBadge() {
+  return <span className="enrich-badge">AI</span>;
+}
+
+function ConfirmBtn({ onClick }) {
+  return (
+    <button className="confirm-field-btn" onClick={onClick} title="Confirm as correct — locks this field from AI updates">
+      ✓ Confirm
+    </button>
+  );
+}
+
+function RelevancePill({ relevance, relevanceSource, onConfirm }) {
+  if (!relevance) return null;
+  const color = RELEVANCE_COLOR[relevance] ?? '#9ca3af';
+  const isEvergreen = relevance === 'evergreen';
+  const isAi = relevanceSource === 'ai';
+
+  return (
+    <div className="relevance-row">
+      <span
+        className="relevance-pill"
+        style={{ background: color + '22', color }}
+        title={isEvergreen ? 'Relevance locked by you. Will never be auto-updated.' : `Relevance: ${relevance}`}
+      >
+        {isEvergreen && <span className="evergreen-lock" aria-label="Evergreen — never auto-updated">🔒</span>}
+        {relevance}
+      </span>
+      {isAi && (
+        <>
+          <AiBadge />
+          <ConfirmBtn onClick={onConfirm} />
+        </>
+      )}
+    </div>
+  );
+}
+
+function SweepBar({ onSweep, sweepRunning, sweepResult, onDismiss }) {
+  return (
+    <div className="sweep-bar">
+      <div className="sweep-left">
+        <button
+          className="btn btn-ghost btn-sm sweep-btn"
+          onClick={onSweep}
+          disabled={sweepRunning}
+          title="Ask Claude to enrich all unenriched cards with impact, relevance, summary and themes"
+        >
+          {sweepRunning ? '⏳ Enriching…' : '✦ Enrich cards'}
+        </button>
+        {sweepRunning && <span className="sweep-spinner" />}
+      </div>
+      {sweepResult && !sweepRunning && (
+        <div className="sweep-result">
+          {sweepResult.error ? (
+            <span className="sweep-result-error">Sweep failed: {sweepResult.error}</span>
+          ) : (
+            <span className="sweep-result-ok">
+              {sweepResult.enriched} enriched · {sweepResult.skipped} skipped · {sweepResult.failed} failed
+            </span>
+          )}
+          <button className="sweep-dismiss" onClick={onDismiss} aria-label="Dismiss">✕</button>
+        </div>
+      )}
+    </div>
+  );
+}
+
+export default function Timeline({
+  entries, allCount,
+  filterCat, setFilterCat,
+  filterTheme, setFilterTheme,
+  filterFormat, setFilterFormat,
+  onAdd, onUpdate, onDelete, viewMode = 'standard',
+  onSweep, sweepRunning, sweepResult, onSweepDismiss,
+  onConfirmField,
+}) {
   const [show, setShow] = useState(false);
   const [form, setForm] = useState(blankForm);
   const [editId, setEditId] = useState(null);
@@ -58,7 +141,7 @@ export default function Timeline({ entries, allCount, filterCat, setFilterCat, f
   };
 
   const startEdit = (e) => {
-    setEditForm({ title: e.title, body: e.body || '', date: e.date, category: e.category, themes: e.themes || [], benefit: e.benefit || '', impact: e.impact ?? null, audience: e.audience ?? null, sections: e.sections || [] });
+    setEditForm({ title: e.title, body: e.body || '', date: e.date, category: e.category, themes: e.themes || [], benefit: e.benefit || '', impact: e.impact ?? null, audience: e.audience ?? null, format: e.format ?? null, sections: e.sections || [] });
     setEditId(e.id);
     setConfirmDel(null);
     setShow(false);
@@ -99,6 +182,15 @@ export default function Timeline({ entries, allCount, filterCat, setFilterCat, f
             <button className="btn btn-primary" onClick={submit}>Add to Timeline</button>
           </div>
         </div>
+      )}
+
+      {onSweep && (
+        <SweepBar
+          onSweep={onSweep}
+          sweepRunning={sweepRunning}
+          sweepResult={sweepResult}
+          onDismiss={onSweepDismiss}
+        />
       )}
 
       <div className="tl-search-wrap">
@@ -184,10 +276,18 @@ export default function Timeline({ entries, allCount, filterCat, setFilterCat, f
                         <span className="tl-date">{fmtDate(e.date)}</span>
                         <button className="tl-cat-badge tl-cat-badge-btn" style={{ background: cat.color + '22', color: cat.color }} onClick={() => setFilterCat(e.category)} title={`Filter by ${cat.label}`}>{cat.glyph} {cat.label}</button>
                         {viewMode === 'detailed' && e.impact && (
-                          <span className="tl-impact-dots" title={`Impact ${e.impact}/5`}>
-                            {[1,2,3,4,5].map(n => (
-                              <span key={n} className={`tl-impact-dot ${n <= e.impact ? 'filled' : ''}`} />
-                            ))}
+                          <span className="tl-impact-row">
+                            <span className="tl-impact-dots" title={`Impact ${e.impact}/5`}>
+                              {[1,2,3,4,5].map(n => (
+                                <span key={n} className={`tl-impact-dot ${n <= e.impact ? 'filled' : ''}`} />
+                              ))}
+                            </span>
+                            {e.impactSource === 'ai' && (
+                              <>
+                                <AiBadge />
+                                <ConfirmBtn onClick={() => onConfirmField(e.id, 'impact')} />
+                              </>
+                            )}
                           </span>
                         )}
                         {e.audience && (
@@ -235,6 +335,29 @@ export default function Timeline({ entries, allCount, filterCat, setFilterCat, f
                             {s.body && <div className="tl-section-body">{s.body}</div>}
                           </div>
                         ))}
+                      </div>
+                    )}
+                    {viewMode === 'detailed' && (e.relevance || e.aiSummary || e.aiAudience) && (
+                      <div className="enrich-panel">
+                        {e.relevance && (
+                          <RelevancePill
+                            relevance={e.relevance}
+                            relevanceSource={e.relevanceSource}
+                            onConfirm={() => onConfirmField(e.id, 'relevance')}
+                          />
+                        )}
+                        {e.aiAudience && (
+                          <div className="enrich-row">
+                            <span className="enrich-label">AI audience</span>
+                            <span className="enrich-value">{e.aiAudience}</span>
+                          </div>
+                        )}
+                        {e.aiSummary && (
+                          <div className="enrich-row enrich-summary">
+                            <span className="enrich-label">AI summary</span>
+                            <span className="enrich-value enrich-summary-text">{e.aiSummary}</span>
+                          </div>
+                        )}
                       </div>
                     )}
                   </div>

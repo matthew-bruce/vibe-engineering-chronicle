@@ -4,8 +4,10 @@ import {
   initLookups,
   loadTimeline, loadSessions,
   addTimelineEntry, updateTimelineEntry, softDeleteCard,
+  confirmCardField,
   addSession, updateSession, softDeleteSession,
 } from '../lib/db.js';
+import supabase from '../lib/supabase.js';
 import { THEMES, CARD_FORMATS } from './constants.js';
 import { cats } from '../lib/cats.js';
 import CSS from './styles.js';
@@ -29,6 +31,8 @@ export default function App() {
   const [pfThemes, setPfThemes] = useState(() => THEMES.map(t => t.id));
   const [pfSignalOnly, setPfSignalOnly] = useState(false);
   const [pfFormatOnly, setPfFormatOnly] = useState(false);
+  const [sweepRunning, setSweepRunning] = useState(false);
+  const [sweepResult, setSweepResult]   = useState(null);
   const [viewMode, setViewMode] = useState('standard');
 
   useEffect(() => {
@@ -117,6 +121,33 @@ export default function App() {
       return next;
     });
   }, [setSearchParams]);
+
+  const runSweep = useCallback(async () => {
+    setSweepRunning(true);
+    setSweepResult(null);
+    try {
+      const { data, error } = await supabase.functions.invoke('enrich-sweep', {
+        body: { mode: 'demand' },
+      });
+      if (error) throw error;
+      setSweepResult(data);
+      // Reload timeline so enriched fields appear immediately
+      const fresh = await loadTimeline();
+      setTl(fresh);
+    } catch (err) {
+      setSweepResult({ error: err.message ?? 'Sweep failed' });
+    } finally {
+      setSweepRunning(false);
+    }
+  }, []);
+
+  const confirmField = useCallback(async (id, field) => {
+    await confirmCardField(id, field);
+    setTl(p => p.map(e => e.id === id
+      ? { ...e, ...(field === 'impact' ? { impactSource: 'human' } : { relevanceSource: 'human' }) }
+      : e
+    ));
+  }, []);
 
   const byDateDesc = (a, b) =>
     new Date(b.date) - new Date(a.date) || b.createdAt - a.createdAt;
@@ -284,6 +315,11 @@ export default function App() {
                 onUpdate={updateTl}
                 onDelete={delTl}
                 viewMode={viewMode}
+                onSweep={runSweep}
+                sweepRunning={sweepRunning}
+                sweepResult={sweepResult}
+                onSweepDismiss={() => setSweepResult(null)}
+                onConfirmField={confirmField}
               />
             } />
             <Route path="/sessions" element={
