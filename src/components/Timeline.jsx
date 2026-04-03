@@ -1,8 +1,15 @@
 import { useState, useEffect } from 'react';
-import { THEMES, uid, fmtDate } from '../constants.js';
+import { THEMES, CARD_FORMATS, uid, fmtDate } from '../constants.js';
 import { cats } from '../../lib/cats.js';
+import { loadCardVersions } from '../../lib/db.js';
 import CardForm, { blankForm } from './CardForm.jsx';
-import QuickCapture from './QuickCapture.jsx';
+
+const RELEVANCE_COLOR = {
+  current:  '#52C788',
+  review:   '#F5A623',
+  dated:    '#9ca3af',
+  evergreen: '#4A9EDB',
+};
 
 function escapeRegex(s) {
   return s.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
@@ -37,7 +44,153 @@ function Highlight({ text, term }) {
   );
 }
 
-export default function Timeline({ entries, allCount, filterCat, setFilterCat, filterTheme, setFilterTheme, onAdd, onUpdate, onDelete, viewMode = 'standard' }) {
+function AiBadge() {
+  return <span className="enrich-badge">AI</span>;
+}
+
+function ConfirmBtn({ onClick }) {
+  return (
+    <button className="confirm-field-btn" onClick={onClick} title="Confirm as correct — locks this field from AI updates">
+      ✓ Confirm
+    </button>
+  );
+}
+
+function RelevancePill({ relevance, relevanceSource, onConfirm }) {
+  if (!relevance) return null;
+  const color = RELEVANCE_COLOR[relevance] ?? '#9ca3af';
+  const isEvergreen = relevance === 'evergreen';
+  const isAi = relevanceSource === 'ai';
+
+  return (
+    <div className="relevance-row">
+      <span
+        className="relevance-pill"
+        style={{ background: color + '22', color }}
+        title={isEvergreen ? 'Relevance locked by you. Will never be auto-updated.' : `Relevance: ${relevance}`}
+      >
+        {isEvergreen && <span className="evergreen-lock" aria-label="Evergreen — never auto-updated">🔒</span>}
+        {relevance}
+      </span>
+      {isAi && (
+        <>
+          <AiBadge />
+          <ConfirmBtn onClick={onConfirm} />
+        </>
+      )}
+    </div>
+  );
+}
+
+function SweepBar({ onSweep, sweepRunning, sweepResult, onDismiss }) {
+  return (
+    <div className="sweep-bar">
+      <div className="sweep-left">
+        <button
+          className="btn btn-ghost btn-sm sweep-btn"
+          onClick={onSweep}
+          disabled={sweepRunning}
+          title="Ask Claude to enrich all unenriched cards with impact, relevance, summary and themes"
+        >
+          {sweepRunning ? '⏳ Enriching…' : '✦ Enrich cards'}
+        </button>
+        {sweepRunning && <span className="sweep-spinner" />}
+      </div>
+      {sweepResult && !sweepRunning && (
+        <div className="sweep-result">
+          {sweepResult.error ? (
+            <span className="sweep-result-error">Sweep failed: {sweepResult.error}</span>
+          ) : (
+            <span className="sweep-result-ok">
+              {sweepResult.enriched} enriched · {sweepResult.skipped} skipped · {sweepResult.failed} failed
+            </span>
+          )}
+          <button className="sweep-dismiss" onClick={onDismiss} aria-label="Dismiss">✕</button>
+        </div>
+      )}
+    </div>
+  );
+}
+
+function VersionHistory({ cardId, onRestore }) {
+  const [expanded, setExpanded]         = useState(false);
+  const [versions, setVersions]         = useState([]);
+  const [loading, setLoading]           = useState(false);
+  const [confirmRestore, setConfirmRestore] = useState(null); // versionId
+
+  async function expand() {
+    if (expanded) { setExpanded(false); return; }
+    setExpanded(true);
+    setLoading(true);
+    try {
+      const data = await loadCardVersions(cardId);
+      setVersions(data);
+    } catch (err) {
+      console.error('[VersionHistory] load failed:', err);
+    } finally {
+      setLoading(false);
+    }
+  }
+
+  async function handleRestore(versionId) {
+    setConfirmRestore(null);
+    await onRestore(cardId, versionId);
+    // Reload the version list so pre-restore snapshot appears
+    setLoading(true);
+    try {
+      const data = await loadCardVersions(cardId);
+      setVersions(data);
+    } finally {
+      setLoading(false);
+    }
+  }
+
+  return (
+    <div className="ver-history">
+      <button className="ver-toggle" onClick={expand}>
+        {expanded ? '▾' : '▸'} Version history{versions.length > 0 ? ` (${versions.length})` : ''}
+      </button>
+      {expanded && (
+        <div className="ver-list">
+          {loading && <div className="ver-loading">Loading…</div>}
+          {!loading && versions.length === 0 && (
+            <div className="ver-empty">No versions yet.</div>
+          )}
+          {versions.map(v => (
+            <div key={v.id} className="ver-row">
+              <div className="ver-meta">
+                <span className="ver-number">v{v.number}</span>
+                <span className="ver-date">{fmtDate(v.versionedAt.slice(0, 10))}</span>
+                <span className="ver-by">{v.versionedBy === 'enrichment_engine' ? 'AI' : 'You'}</span>
+                {v.note && <span className="ver-note">{v.note}</span>}
+              </div>
+              <div className="ver-actions">
+                {confirmRestore === v.id ? (
+                  <>
+                    <button className="btn btn-ghost btn-sm ver-confirm-restore" onClick={() => handleRestore(v.id)}>Restore?</button>
+                    <button className="btn btn-ghost btn-sm btn-icon" onClick={() => setConfirmRestore(null)}>✕</button>
+                  </>
+                ) : (
+                  <button className="btn btn-ghost btn-sm ver-restore-btn" onClick={() => setConfirmRestore(v.id)}>Restore</button>
+                )}
+              </div>
+            </div>
+          ))}
+        </div>
+      )}
+    </div>
+  );
+}
+
+export default function Timeline({
+  entries, allCount,
+  filterCat, setFilterCat,
+  filterTheme, setFilterTheme,
+  filterFormat, setFilterFormat,
+  onAdd, onUpdate, onDelete, viewMode = 'standard',
+  onSweep, sweepRunning, sweepResult, onSweepDismiss,
+  onConfirmField, onRestoreVersion,
+}) {
   const [show, setShow] = useState(false);
   const [form, setForm] = useState(blankForm);
   const [editId, setEditId] = useState(null);
@@ -59,7 +212,7 @@ export default function Timeline({ entries, allCount, filterCat, setFilterCat, f
   };
 
   const startEdit = (e) => {
-    setEditForm({ title: e.title, body: e.body || '', date: e.date, category: e.category, themes: e.themes || [], benefit: e.benefit || '', impact: e.impact ?? null, audience: e.audience ?? null, sections: e.sections || [] });
+    setEditForm({ title: e.title, body: e.body || '', date: e.date, category: e.category, themes: e.themes || [], benefit: e.benefit || '', impact: e.impact ?? null, audience: e.audience ?? null, format: e.format ?? null, sections: e.sections || [] });
     setEditId(e.id);
     setConfirmDel(null);
     setShow(false);
@@ -102,7 +255,14 @@ export default function Timeline({ entries, allCount, filterCat, setFilterCat, f
         </div>
       )}
 
-      <QuickCapture onAdd={onAdd} />
+      {onSweep && (
+        <SweepBar
+          onSweep={onSweep}
+          sweepRunning={sweepRunning}
+          sweepResult={sweepResult}
+          onDismiss={onSweepDismiss}
+        />
+      )}
 
       <div className="tl-search-wrap">
         <input
@@ -130,6 +290,13 @@ export default function Timeline({ entries, allCount, filterCat, setFilterCat, f
           <button key={t.id} className={`fchip fchip-sm ${filterTheme === t.id ? 'on' : ''}`} onClick={() => setFilterTheme(t.id)}
             style={filterTheme === t.id ? { borderColor: t.color, color: t.color } : {}}
           >{t.label}</button>
+        ))}
+      </div>
+      <div className="filter-row filter-row-themes">
+        <button className={`fchip fchip-sm ${filterFormat === 'all' ? 'on' : ''}`} onClick={() => setFilterFormat('all')}>All formats</button>
+        {CARD_FORMATS.map(f => (
+          <button key={f.value} className={`fchip fchip-sm ${filterFormat === f.value ? 'on' : ''}`} onClick={() => setFilterFormat(f.value)}
+          >{f.label}</button>
         ))}
       </div>
 
@@ -180,10 +347,18 @@ export default function Timeline({ entries, allCount, filterCat, setFilterCat, f
                         <span className="tl-date">{fmtDate(e.date)}</span>
                         <button className="tl-cat-badge tl-cat-badge-btn" style={{ background: cat.color + '22', color: cat.color }} onClick={() => setFilterCat(e.category)} title={`Filter by ${cat.label}`}>{cat.glyph} {cat.label}</button>
                         {viewMode === 'detailed' && e.impact && (
-                          <span className="tl-impact-dots" title={`Impact ${e.impact}/5`}>
-                            {[1,2,3,4,5].map(n => (
-                              <span key={n} className={`tl-impact-dot ${n <= e.impact ? 'filled' : ''}`} />
-                            ))}
+                          <span className="tl-impact-row">
+                            <span className="tl-impact-dots" title={`Impact ${e.impact}/5`}>
+                              {[1,2,3,4,5].map(n => (
+                                <span key={n} className={`tl-impact-dot ${n <= e.impact ? 'filled' : ''}`} />
+                              ))}
+                            </span>
+                            {e.impactSource === 'ai' && (
+                              <>
+                                <AiBadge />
+                                <ConfirmBtn onClick={() => onConfirmField(e.id, 'impact')} />
+                              </>
+                            )}
                           </span>
                         )}
                         {e.audience && (
@@ -232,6 +407,32 @@ export default function Timeline({ entries, allCount, filterCat, setFilterCat, f
                           </div>
                         ))}
                       </div>
+                    )}
+                    {viewMode === 'detailed' && (e.relevance || e.aiSummary || e.aiAudience) && (
+                      <div className="enrich-panel">
+                        {e.relevance && (
+                          <RelevancePill
+                            relevance={e.relevance}
+                            relevanceSource={e.relevanceSource}
+                            onConfirm={() => onConfirmField(e.id, 'relevance')}
+                          />
+                        )}
+                        {e.aiAudience && (
+                          <div className="enrich-row">
+                            <span className="enrich-label">AI audience</span>
+                            <span className="enrich-value">{e.aiAudience}</span>
+                          </div>
+                        )}
+                        {e.aiSummary && (
+                          <div className="enrich-row enrich-summary">
+                            <span className="enrich-label">AI summary</span>
+                            <span className="enrich-value enrich-summary-text">{e.aiSummary}</span>
+                          </div>
+                        )}
+                      </div>
+                    )}
+                    {viewMode === 'detailed' && onRestoreVersion && (
+                      <VersionHistory cardId={e.id} onRestore={onRestoreVersion} />
                     )}
                   </div>
                 )}
