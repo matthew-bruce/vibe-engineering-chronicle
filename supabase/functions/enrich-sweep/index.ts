@@ -3,13 +3,14 @@
  *
  * Called with { mode: 'demand' | 'scheduled' }.
  *
- * On-demand: enriches cards where card_enriched_at is null OR relevance was
- *            set by AI (so it can be re-evaluated). Skips evergreen (human).
+ * On-demand: enriches cards where card_enriched_at is null (never enriched).
+ * Scheduled: evaluates all non-deleted cards.
  *
- * Scheduled: evaluates all non-deleted cards. Skips only human-locked evergreen
- *            cards. When relevance changes, prefixes summary with an audit note.
+ * Skip condition (both modes): card_relevance === 'evergreen'.
+ * Versioning is the safety net — not field-level locks. All non-evergreen
+ * cards are enriched on every run regardless of prior source.
  *
- * Snapshots each card before writing enrichment — every change is undoable.
+ * Snapshots each card before writing — every change is undoable.
  * Returns { enriched, skipped, failed }.
  */
 
@@ -28,7 +29,7 @@ type Card = Record<string, unknown>;
 
 // ─── Snapshot helper (inlined — Deno can't import from app lib/) ──────────────
 
-async function snapshotCard(supabase: SupabaseClient, cardId: string): Promise<void> {
+async function snapshotCard(supabase: SupabaseClient, cardId: string, enrichedAt: string): Promise<void> {
   try {
     const [cardRes, catsRes, themesRes, sectionsRes] = await Promise.all([
       supabase
@@ -75,7 +76,7 @@ async function snapshotCard(supabase: SupabaseClient, cardId: string): Promise<v
       version_number: nextNum,
       card_snapshot:  snapshot,
       versioned_by:   'enrichment_engine',
-      version_note:   'Pre-enrichment snapshot',
+      version_note:   `Pre-enrichment snapshot · enrichment_engine · ${enrichedAt}`,
     });
 
     const { data: all } = await supabase
@@ -129,19 +130,20 @@ function parseResponse(text: string): Record<string, unknown> | null {
   } catch { return null; }
 }
 
+// Skip only evergreen cards — versioning is the safety net, not field locks
 function shouldSkip(card: Card): boolean {
-  return card.card_relevance === 'evergreen' && card.card_relevance_source === 'human';
+  return card.card_relevance === 'evergreen';
 }
 
 async function enrichOne(
   supabase: SupabaseClient,
   anthropic: Anthropic,
   card: Card,
-  mode: string,
 ): Promise<'enriched' | 'skipped' | 'failed'> {
   if (shouldSkip(card)) return 'skipped';
 
-  const cardId = card.card_id as string;
+  const cardId    = card.card_id as string;
+  const enrichedAt = new Date().toISOString();
 
   const { data: sections } = await supabase
     .from('card_sections')
@@ -155,8 +157,8 @@ async function enrichOne(
     .join('\n');
 
   try {
-    // Snapshot before write
-    await snapshotCard(supabase, cardId);
+    // Snapshot before write — records timestamp and source in version note
+    await snapshotCard(supabase, cardId, enrichedAt);
 
     const response = await anthropic.messages.create({
       model: 'claude-sonnet-4-6',
@@ -168,31 +170,17 @@ async function enrichOne(
     const parsed = parseResponse(text);
     if (!parsed) { console.warn('[enrich-sweep] parse failed for', cardId, text); return 'failed'; }
 
+    // Write all enrichment fields — no human-source locks
     const update: Record<string, unknown> = {
-      card_ai_themes:   parsed.themes,
-      card_ai_audience: parsed.audience,
-      card_enriched_at: new Date().toISOString(),
+      card_impact:           parsed.impact,
+      card_impact_source:    'enrichment_engine',
+      card_relevance:        parsed.relevance,
+      card_relevance_source: 'enrichment_engine',
+      card_ai_themes:        parsed.themes,
+      card_ai_audience:      parsed.audience,
+      card_ai_summary:       parsed.summary,
+      card_enriched_at:      enrichedAt,
     };
-
-    if (card.card_impact_source !== 'human') {
-      update.card_impact        = parsed.impact;
-      update.card_impact_source = 'ai';
-    }
-
-    if (card.card_relevance_source !== 'human') {
-      const prevRelevance = card.card_relevance as string | null;
-      update.card_relevance        = parsed.relevance;
-      update.card_relevance_source = 'ai';
-
-      let summary = parsed.summary as string;
-      // Scheduled: flag relevance drift in summary
-      if (mode === 'scheduled' && prevRelevance && prevRelevance !== parsed.relevance) {
-        summary = `[Relevance changed from ${prevRelevance} to ${parsed.relevance}] ${summary}`;
-      }
-      update.card_ai_summary = summary;
-    } else {
-      update.card_ai_summary = parsed.summary;
-    }
 
     const { error: updateErr } = await supabase.from('cards').update(update).eq('card_id', cardId);
     if (updateErr) { console.error('[enrich-sweep] update failed for', cardId, updateErr); return 'failed'; }
@@ -220,23 +208,22 @@ Deno.serve(async (req: Request) => {
     const body = await req.json().catch(() => ({}));
     const mode = (body.mode === 'scheduled') ? 'scheduled' : 'demand';
 
+    // On-demand: only cards never enriched (fill-in-blanks pass).
+    // Scheduled: all non-deleted cards — full refresh, shouldSkip handles evergreen.
     let query = supabase
       .from('cards')
-      .select(`card_id, card_title, card_body, card_benefit,
-               card_impact, card_impact_source,
-               card_relevance, card_relevance_source,
-               card_ai_summary, card_enriched_at`)
+      .select('card_id, card_title, card_body, card_benefit, card_relevance, card_enriched_at')
       .is('card_deleted_at', null);
 
     if (mode === 'demand') {
-      query = query.or('card_enriched_at.is.null,card_relevance_source.eq.ai');
+      query = query.is('card_enriched_at', null);
     }
 
     const { data: cards, error: fetchErr } = await query;
     if (fetchErr) throw fetchErr;
 
     const results = await Promise.all(
-      (cards ?? []).map((card: Card) => enrichOne(supabase, anthropic, card, mode))
+      (cards ?? []).map((card: Card) => enrichOne(supabase, anthropic, card))
     );
 
     const enriched = results.filter(r => r === 'enriched').length;
