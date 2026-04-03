@@ -1,6 +1,7 @@
 import { useState, useEffect } from 'react';
 import { THEMES, CARD_FORMATS, uid, fmtDate } from '../constants.js';
 import { cats } from '../../lib/cats.js';
+import { loadCardVersions } from '../../lib/db.js';
 import CardForm, { blankForm } from './CardForm.jsx';
 
 const RELEVANCE_COLOR = {
@@ -111,6 +112,76 @@ function SweepBar({ onSweep, sweepRunning, sweepResult, onDismiss }) {
   );
 }
 
+function VersionHistory({ cardId, onRestore }) {
+  const [expanded, setExpanded]         = useState(false);
+  const [versions, setVersions]         = useState([]);
+  const [loading, setLoading]           = useState(false);
+  const [confirmRestore, setConfirmRestore] = useState(null); // versionId
+
+  async function expand() {
+    if (expanded) { setExpanded(false); return; }
+    setExpanded(true);
+    setLoading(true);
+    try {
+      const data = await loadCardVersions(cardId);
+      setVersions(data);
+    } catch (err) {
+      console.error('[VersionHistory] load failed:', err);
+    } finally {
+      setLoading(false);
+    }
+  }
+
+  async function handleRestore(versionId) {
+    setConfirmRestore(null);
+    await onRestore(cardId, versionId);
+    // Reload the version list so pre-restore snapshot appears
+    setLoading(true);
+    try {
+      const data = await loadCardVersions(cardId);
+      setVersions(data);
+    } finally {
+      setLoading(false);
+    }
+  }
+
+  return (
+    <div className="ver-history">
+      <button className="ver-toggle" onClick={expand}>
+        {expanded ? '▾' : '▸'} Version history{versions.length > 0 ? ` (${versions.length})` : ''}
+      </button>
+      {expanded && (
+        <div className="ver-list">
+          {loading && <div className="ver-loading">Loading…</div>}
+          {!loading && versions.length === 0 && (
+            <div className="ver-empty">No versions yet.</div>
+          )}
+          {versions.map(v => (
+            <div key={v.id} className="ver-row">
+              <div className="ver-meta">
+                <span className="ver-number">v{v.number}</span>
+                <span className="ver-date">{fmtDate(v.versionedAt.slice(0, 10))}</span>
+                <span className="ver-by">{v.versionedBy === 'enrichment_engine' ? 'AI' : 'You'}</span>
+                {v.note && <span className="ver-note">{v.note}</span>}
+              </div>
+              <div className="ver-actions">
+                {confirmRestore === v.id ? (
+                  <>
+                    <button className="btn btn-ghost btn-sm ver-confirm-restore" onClick={() => handleRestore(v.id)}>Restore?</button>
+                    <button className="btn btn-ghost btn-sm btn-icon" onClick={() => setConfirmRestore(null)}>✕</button>
+                  </>
+                ) : (
+                  <button className="btn btn-ghost btn-sm ver-restore-btn" onClick={() => setConfirmRestore(v.id)}>Restore</button>
+                )}
+              </div>
+            </div>
+          ))}
+        </div>
+      )}
+    </div>
+  );
+}
+
 export default function Timeline({
   entries, allCount,
   filterCat, setFilterCat,
@@ -118,7 +189,7 @@ export default function Timeline({
   filterFormat, setFilterFormat,
   onAdd, onUpdate, onDelete, viewMode = 'standard',
   onSweep, sweepRunning, sweepResult, onSweepDismiss,
-  onConfirmField,
+  onConfirmField, onRestoreVersion,
 }) {
   const [show, setShow] = useState(false);
   const [form, setForm] = useState(blankForm);
@@ -359,6 +430,9 @@ export default function Timeline({
                           </div>
                         )}
                       </div>
+                    )}
+                    {viewMode === 'detailed' && onRestoreVersion && (
+                      <VersionHistory cardId={e.id} onRestore={onRestoreVersion} />
                     )}
                   </div>
                 )}

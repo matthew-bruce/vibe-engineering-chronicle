@@ -4,7 +4,7 @@ import {
   initLookups,
   loadTimeline, loadSessions,
   addTimelineEntry, updateTimelineEntry, softDeleteCard,
-  confirmCardField,
+  confirmCardField, restoreCardVersion,
   addSession, updateSession, softDeleteSession,
 } from '../lib/db.js';
 import supabase from '../lib/supabase.js';
@@ -147,6 +147,14 @@ export default function App() {
       ? { ...e, ...(field === 'impact' ? { impactSource: 'human' } : { relevanceSource: 'human' }) }
       : e
     ));
+  }, []);
+
+  const restoreVersion = useCallback(async (cardId, versionId) => {
+    try {
+      await restoreCardVersion(cardId, versionId);
+      const fresh = await loadTimeline();
+      setTl(fresh);
+    } catch (err) { console.error('[Chronicle] restoreVersion failed:', err); }
   }, []);
 
   const byDateDesc = (a, b) =>
@@ -320,6 +328,7 @@ export default function App() {
                 sweepResult={sweepResult}
                 onSweepDismiss={() => setSweepResult(null)}
                 onConfirmField={confirmField}
+                onRestoreVersion={restoreVersion}
               />
             } />
             <Route path="/sessions" element={
