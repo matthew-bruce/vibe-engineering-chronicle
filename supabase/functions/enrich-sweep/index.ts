@@ -135,6 +135,45 @@ function shouldSkip(card: Card): boolean {
   return card.card_relevance === 'evergreen';
 }
 
+const BATCH_SIZE        = 5;
+const BATCH_DELAY_MS    = 15_000;
+const DEFAULT_RETRY_MS  = 60_000;
+
+function sleep(ms: number): Promise<void> {
+  return new Promise(resolve => setTimeout(resolve, ms));
+}
+
+async function callClaude(
+  anthropic: Anthropic,
+  card: Card,
+  sectionText: string,
+): Promise<ReturnType<typeof parseResponse>> {
+  // One retry on 429, honouring retry-after if present
+  for (let attempt = 0; attempt < 2; attempt++) {
+    try {
+      const response = await anthropic.messages.create({
+        model: 'claude-sonnet-4-6',
+        max_tokens: 300,
+        messages: [{ role: 'user', content: buildPrompt(card, sectionText) }],
+      });
+      return parseResponse((response.content[0] as { type: string; text: string }).text);
+    } catch (err: unknown) {
+      const status = (err as Record<string, unknown>)?.status as number | undefined;
+      if (status === 429 && attempt === 0) {
+        const retryAfter = (err as Record<string, unknown>)?.headers as Record<string, string> | undefined;
+        const waitMs = retryAfter?.['retry-after']
+          ? parseInt(retryAfter['retry-after'], 10) * 1000
+          : DEFAULT_RETRY_MS;
+        console.warn(`[enrich-sweep] 429 for ${card.card_id} — waiting ${waitMs}ms before retry`);
+        await sleep(waitMs);
+        continue;
+      }
+      throw err;
+    }
+  }
+  return null;
+}
+
 async function enrichOne(
   supabase: SupabaseClient,
   anthropic: Anthropic,
@@ -142,7 +181,7 @@ async function enrichOne(
 ): Promise<'enriched' | 'skipped' | 'failed'> {
   if (shouldSkip(card)) return 'skipped';
 
-  const cardId    = card.card_id as string;
+  const cardId     = card.card_id as string;
   const enrichedAt = new Date().toISOString();
 
   const { data: sections } = await supabase
@@ -160,15 +199,8 @@ async function enrichOne(
     // Snapshot before write — records timestamp and source in version note
     await snapshotCard(supabase, cardId, enrichedAt);
 
-    const response = await anthropic.messages.create({
-      model: 'claude-sonnet-4-6',
-      max_tokens: 300,
-      messages: [{ role: 'user', content: buildPrompt(card, sectionText) }],
-    });
-
-    const text   = (response.content[0] as { type: string; text: string }).text;
-    const parsed = parseResponse(text);
-    if (!parsed) { console.warn('[enrich-sweep] parse failed for', cardId, text); return 'failed'; }
+    const parsed = await callClaude(anthropic, card, sectionText);
+    if (!parsed) { console.warn('[enrich-sweep] parse failed for', cardId); return 'failed'; }
 
     // Write all enrichment fields — no human-source locks
     const update: Record<string, unknown> = {
@@ -229,13 +261,30 @@ Deno.serve(async (req: Request) => {
     const { data: cards, error: fetchErr } = await query;
     if (fetchErr) throw fetchErr;
 
-    const results = await Promise.all(
-      (cards ?? []).map((card: Card) => enrichOne(supabase, anthropic, card))
-    );
+    const allCards = cards ?? [];
+    let enriched = 0;
+    let skipped  = 0;
+    let failed   = 0;
 
-    const enriched = results.filter(r => r === 'enriched').length;
-    const skipped  = results.filter(r => r === 'skipped').length;
-    const failed   = results.filter(r => r === 'failed').length;
+    for (let i = 0; i < allCards.length; i += BATCH_SIZE) {
+      const batch   = allCards.slice(i, i + BATCH_SIZE);
+      const batchNum = Math.floor(i / BATCH_SIZE) + 1;
+
+      const results = await Promise.all(
+        batch.map((card: Card) => enrichOne(supabase, anthropic, card))
+      );
+
+      enriched += results.filter(r => r === 'enriched').length;
+      skipped  += results.filter(r => r === 'skipped').length;
+      failed   += results.filter(r => r === 'failed').length;
+
+      console.log(`[enrich-sweep] batch ${batchNum} complete — ${enriched} enriched, ${failed} failed so far`);
+
+      // Delay between batches (skip after the final batch)
+      if (i + BATCH_SIZE < allCards.length) {
+        await sleep(BATCH_DELAY_MS);
+      }
+    }
 
     return new Response(JSON.stringify({ enriched, skipped, failed }), {
       status: 200,
