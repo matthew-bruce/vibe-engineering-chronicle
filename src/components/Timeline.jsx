@@ -82,7 +82,14 @@ function RelevancePill({ relevance, relevanceSource, onConfirm }) {
   );
 }
 
-function SweepBar({ onSweep, sweepRunning, sweepResult, onDismiss }) {
+function SweepBar({ onSweep, sweepRunning, sweepProgress, sweepResult, onDismiss }) {
+  const processed = sweepProgress
+    ? sweepProgress.enriched + sweepProgress.skipped + sweepProgress.failed
+    : 0;
+  const total = sweepProgress?.total ?? 0;
+  const pct   = total > 0 ? Math.min(100, Math.round((processed / total) * 100)) : 0;
+  const hasProgress = sweepRunning && sweepProgress && total > 0;
+
   return (
     <div className="sweep-bar">
       <div className="sweep-left">
@@ -94,15 +101,23 @@ function SweepBar({ onSweep, sweepRunning, sweepResult, onDismiss }) {
         >
           {sweepRunning ? '⏳ Enriching…' : '✦ Enrich cards'}
         </button>
-        {sweepRunning && <span className="sweep-spinner" />}
+        {sweepRunning && !sweepProgress && <span className="sweep-spinner" />}
+        {hasProgress && (
+          <span className="sweep-progress-text">{processed} of {total}</span>
+        )}
       </div>
+      {hasProgress && (
+        <div className="sweep-progress-bar-wrap" title={`${pct}%`}>
+          <div className="sweep-progress-bar" style={{ width: `${pct}%` }} />
+        </div>
+      )}
       {sweepResult && !sweepRunning && (
         <div className="sweep-result">
           {sweepResult.error ? (
             <span className="sweep-result-error">Sweep failed: {sweepResult.error}</span>
           ) : (
             <span className="sweep-result-ok">
-              {sweepResult.enriched} enriched · {sweepResult.skipped} skipped · {sweepResult.failed} failed
+              Done — {sweepResult.enriched} enriched · {sweepResult.skipped} skipped · {sweepResult.failed} failed
             </span>
           )}
           <button className="sweep-dismiss" onClick={onDismiss} aria-label="Dismiss">✕</button>
@@ -188,7 +203,7 @@ export default function Timeline({
   filterTheme, setFilterTheme,
   filterFormat, setFilterFormat,
   onAdd, onUpdate, onDelete, viewMode = 'standard',
-  onSweep, sweepRunning, sweepResult, onSweepDismiss,
+  onSweep, sweepRunning, sweepProgress, sweepResult, onSweepDismiss,
   onConfirmField, onRestoreVersion,
 }) {
   const [show, setShow] = useState(false);
@@ -259,6 +274,7 @@ export default function Timeline({
         <SweepBar
           onSweep={onSweep}
           sweepRunning={sweepRunning}
+          sweepProgress={sweepProgress}
           sweepResult={sweepResult}
           onDismiss={onSweepDismiss}
         />

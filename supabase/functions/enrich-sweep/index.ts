@@ -262,33 +262,57 @@ Deno.serve(async (req: Request) => {
     if (fetchErr) throw fetchErr;
 
     const allCards = cards ?? [];
+    const total    = allCards.length;
     let enriched = 0;
     let skipped  = 0;
     let failed   = 0;
 
-    for (let i = 0; i < allCards.length; i += BATCH_SIZE) {
-      const batch   = allCards.slice(i, i + BATCH_SIZE);
-      const batchNum = Math.floor(i / BATCH_SIZE) + 1;
+    const corsHeaders = {
+      'Access-Control-Allow-Origin':  '*',
+      'Access-Control-Allow-Methods': 'POST, OPTIONS',
+      'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type',
+    };
 
-      const results = await Promise.all(
-        batch.map((card: Card) => enrichOne(supabase, anthropic, card))
-      );
+    const { readable, writable } = new TransformStream();
+    const writer  = writable.getWriter();
+    const encode  = (obj: object) => new TextEncoder().encode(JSON.stringify(obj) + '\n');
 
-      enriched += results.filter(r => r === 'enriched').length;
-      skipped  += results.filter(r => r === 'skipped').length;
-      failed   += results.filter(r => r === 'failed').length;
+    // Run sweep in background so we can return the streaming Response immediately
+    (async () => {
+      try {
+        for (let i = 0; i < allCards.length; i += BATCH_SIZE) {
+          const batch    = allCards.slice(i, i + BATCH_SIZE);
+          const batchNum = Math.floor(i / BATCH_SIZE) + 1;
 
-      console.log(`[enrich-sweep] batch ${batchNum} complete — ${enriched} enriched, ${failed} failed so far`);
+          const results = await Promise.all(
+            batch.map((card: Card) => enrichOne(supabase, anthropic, card))
+          );
 
-      // Delay between batches (skip after the final batch)
-      if (i + BATCH_SIZE < allCards.length) {
-        await sleep(BATCH_DELAY_MS);
+          enriched += results.filter(r => r === 'enriched').length;
+          skipped  += results.filter(r => r === 'skipped').length;
+          failed   += results.filter(r => r === 'failed').length;
+
+          console.log(`[enrich-sweep] batch ${batchNum} complete — ${enriched} enriched, ${failed} failed so far`);
+
+          await writer.write(encode({ enriched, skipped, failed, total, done: false }));
+
+          if (i + BATCH_SIZE < allCards.length) {
+            await sleep(BATCH_DELAY_MS);
+          }
+        }
+        await writer.write(encode({ enriched, skipped, failed, total, done: true }));
+      } catch (err) {
+        const msg = err instanceof Error ? err.message : String(err);
+        console.error('[enrich-sweep] fatal error in stream:', err);
+        await writer.write(encode({ error: msg, enriched, skipped, failed, total, done: true }));
+      } finally {
+        await writer.close();
       }
-    }
+    })();
 
-    return new Response(JSON.stringify({ enriched, skipped, failed }), {
+    return new Response(readable, {
       status: 200,
-      headers: { 'Content-Type': 'application/json' },
+      headers: { ...corsHeaders, 'Content-Type': 'text/plain; charset=utf-8' },
     });
   } catch (err) {
     console.error('[enrich-sweep] fatal error — full error object:', err);

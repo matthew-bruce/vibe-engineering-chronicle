@@ -732,6 +732,9 @@ mark.search-hl { background:#fef08a; color:inherit; border-radius:2px; padding:0
 .sweep-result-error { color:#E86161; }
 .sweep-dismiss { background:none; border:none; cursor:pointer; color:var(--muted); font-size:12px; padding:0 2px; line-height:1; }
 .sweep-dismiss:hover { color:var(--text); }
+.sweep-progress-text { font-size:11px; font-family:var(--ff-mono); color:var(--muted2); }
+.sweep-progress-bar-wrap { flex:1; min-width:120px; max-width:240px; height:4px; background:var(--border); border-radius:2px; overflow:hidden; }
+.sweep-progress-bar { height:100%; background:var(--accent); border-radius:2px; transition:width 0.4s ease; }
 
 /* VERSION HISTORY */
 .ver-history { margin-top:10px; border-top:1px solid var(--border); padding-top:8px; }

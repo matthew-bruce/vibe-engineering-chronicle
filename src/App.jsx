@@ -31,8 +31,9 @@ export default function App() {
   const [pfThemes, setPfThemes] = useState(() => THEMES.map(t => t.id));
   const [pfSignalOnly, setPfSignalOnly] = useState(false);
   const [pfFormatOnly, setPfFormatOnly] = useState(false);
-  const [sweepRunning, setSweepRunning] = useState(false);
-  const [sweepResult, setSweepResult]   = useState(null);
+  const [sweepRunning, setSweepRunning]   = useState(false);
+  const [sweepResult, setSweepResult]     = useState(null);
+  const [sweepProgress, setSweepProgress] = useState(null);
   const [viewMode, setViewMode] = useState('standard');
 
   useEffect(() => {
@@ -125,12 +126,44 @@ export default function App() {
   const runSweep = useCallback(async () => {
     setSweepRunning(true);
     setSweepResult(null);
+    setSweepProgress(null);
     try {
-      const { data, error } = await supabase.functions.invoke('enrich-sweep', {
-        body: { mode: 'demand' },
+      const SUPABASE_URL = import.meta.env.VITE_SUPABASE_URL;
+      const ANON_KEY     = import.meta.env.VITE_SUPABASE_ANON_KEY;
+      const response = await fetch(`${SUPABASE_URL}/functions/v1/enrich-sweep`, {
+        method: 'POST',
+        headers: {
+          'Authorization': `Bearer ${ANON_KEY}`,
+          'apikey':        ANON_KEY,
+          'Content-Type':  'application/json',
+          'x-client-info': 'chronicle-web',
+        },
+        body: JSON.stringify({ mode: 'demand' }),
       });
-      if (error) throw error;
-      setSweepResult(data);
+      if (!response.ok) throw new Error(`HTTP ${response.status}`);
+
+      const reader  = response.body.getReader();
+      const decoder = new TextDecoder();
+      let buffer = '';
+
+      while (true) {
+        const { done, value } = await reader.read();
+        if (done) break;
+        buffer += decoder.decode(value, { stream: true });
+        const lines = buffer.split('\n');
+        buffer = lines.pop() ?? '';
+        for (const line of lines) {
+          if (!line.trim()) continue;
+          try {
+            const data = JSON.parse(line);
+            if (data.done) {
+              setSweepResult(data);
+            } else {
+              setSweepProgress(data);
+            }
+          } catch { /* ignore malformed lines */ }
+        }
+      }
       // Reload timeline so enriched fields appear immediately
       const fresh = await loadTimeline();
       setTl(fresh);
@@ -325,8 +358,9 @@ export default function App() {
                 viewMode={viewMode}
                 onSweep={runSweep}
                 sweepRunning={sweepRunning}
+                sweepProgress={sweepProgress}
                 sweepResult={sweepResult}
-                onSweepDismiss={() => setSweepResult(null)}
+                onSweepDismiss={() => { setSweepResult(null); setSweepProgress(null); }}
                 onConfirmField={confirmField}
                 onRestoreVersion={restoreVersion}
               />
