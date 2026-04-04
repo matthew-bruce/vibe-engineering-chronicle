@@ -1,6 +1,7 @@
-import { render, screen, fireEvent } from '@testing-library/react';
-import { describe, it, expect, vi } from 'vitest';
+import { render, screen, fireEvent, cleanup } from '@testing-library/react';
+import { describe, it, expect, vi, afterEach } from 'vitest';
 import CardForm, { blankForm } from '../CardForm.jsx';
+import { cats } from '../../../lib/cats.js';
 
 // ─── blankForm() ──────────────────────────────────────────────────────────────
 
@@ -222,5 +223,52 @@ describe('CardForm onChange callbacks', () => {
     const { onChange } = renderForm({ themes: ['signal'] });
     fireEvent.click(screen.getByText('Industry'));
     expect(onChange).toHaveBeenCalledWith('themes', ['signal', 'industry']);
+  });
+});
+
+// ─── Category description subtitle ────────────────────────────────────────────
+
+describe('CardForm category description', () => {
+  afterEach(() => {
+    cats.wow.description = '';
+    cats.learning.description = '';
+    cleanup();
+  });
+
+  it('shows description subtitle when selected category has a description', () => {
+    cats.wow.description = 'A moment of genuine surprise or delight.';
+    renderForm({ category: 'wow' });
+    expect(screen.getByText('A moment of genuine surprise or delight.')).toBeInTheDocument();
+  });
+
+  it('does not render description element when description is empty', () => {
+    cats.wow.description = '';
+    renderForm({ category: 'wow' });
+    expect(document.querySelector('.cat-description')).toBeNull();
+  });
+
+  it('updates description when category selection changes', () => {
+    cats.wow.description = 'Wow description';
+    cats.learning.description = 'Learning description';
+    // Render with wow selected — wow description visible
+    const { form } = renderForm({ category: 'wow' });
+    expect(screen.getByText('Wow description')).toBeInTheDocument();
+    expect(screen.queryByText('Learning description')).toBeNull();
+  });
+
+  it('option elements carry description as title attribute for hover', () => {
+    cats.wow.description = 'Wow hover text';
+    renderForm({ category: 'wow' });
+    const [catSelect] = screen.getAllByRole('combobox');
+    const wowOption = Array.from(catSelect.options).find(o => o.value === 'wow');
+    expect(wowOption.title).toBe('Wow hover text');
+  });
+
+  it('option title is absent when description is empty', () => {
+    cats.wow.description = '';
+    renderForm({ category: 'wow' });
+    const [catSelect] = screen.getAllByRole('combobox');
+    const wowOption = Array.from(catSelect.options).find(o => o.value === 'wow');
+    expect(wowOption.title).toBe('');
   });
 });

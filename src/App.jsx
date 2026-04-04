@@ -245,7 +245,10 @@ export default function App() {
                           <button key={k} className={`pf-chip ${pfCats.includes(k) ? 'on' : ''}`}
                             style={pfCats.includes(k) ? { borderColor: v.color, color: v.color } : {}}
                             onClick={() => togglePfCat(k)}
-                          >{v.glyph} {v.label}</button>
+                          >
+                            <span>{v.glyph} {v.label}</span>
+                            {v.description && <span className="pf-chip-desc">{v.description}</span>}
+                          </button>
                         ))}
                       </div>
                     </div>

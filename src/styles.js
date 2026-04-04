@@ -521,9 +521,10 @@ mark.search-hl { background:#fef08a; color:inherit; border-radius:2px; padding:0
   padding:3px 10px; border-radius:20px; border:1px solid var(--border2);
   font-size:11px; color:var(--muted2); background:none;
   font-family:var(--ff-body); cursor:pointer; transition:all 0.15s;
-  display:flex; align-items:center; gap:4px;
+  display:flex; flex-direction:column; align-items:flex-start; gap:2px;
 }
 .pf-chip.on { background:var(--s3); color:var(--text); border-color:var(--muted2); }
+.pf-chip-desc { font-size:9px; opacity:0.65; line-height:1.3; font-weight:400; }
 .pf-footer { display:flex; align-items:center; justify-content:space-between; margin-top:14px; padding-top:12px; border-top:1px solid var(--border); }
 .pf-count { font-family:var(--ff-mono); font-size:11px; color:var(--muted2); }
 .btn-filter { background:none; color:var(--muted2); border:1px solid var(--border2); }

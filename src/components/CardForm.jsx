@@ -65,10 +65,15 @@ export default function CardForm({ form, onChange }) {
             onChange={e => f('category', e.target.value)}
           >
             {catOptions.map(([k, v]) => (
-              <option key={k} value={k}>{v.glyph} {v.label}</option>
+              <option key={k} value={k} title={v.description || undefined}>{v.glyph} {v.label}</option>
             ))}
           </select>
         </div>
+        {activeCat.description && (
+          <div className="cat-description" style={{ marginTop: 4, fontSize: '0.78rem', opacity: 0.65, paddingLeft: 18 }}>
+            {activeCat.description}
+          </div>
+        )}
       </div>
       <div>
         <div className="form-label">Impact</div>
