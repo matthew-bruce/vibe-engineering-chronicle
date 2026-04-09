@@ -102,6 +102,14 @@
 
 ---
 
+## 🔵 Planned — Edge Function Features
+
+- [ ] **Card Crafting Engine** — Supabase Edge Function that accepts raw unstructured input (a sentence, paragraph, or conversation snippet) and returns a fully structured Chronicle card ready to insert. Should select the appropriate category, assign themes, score impact, write a benefit line, sharpen the title, and expand the body. Distinct from the existing enrichment engine (which operates on cards that already exist). Callable from Claude Chat via Supabase MCP or any webhook-capable surface. Goal: reduce card creation to a single natural language input. One session to build alongside the Session Logging Engine.
+
+- [ ] **Session Logging Engine** — Supabase Edge Function that accepts a simple webhook payload (project name, duration in minutes, optional notes) and inserts a session record into the sessions table. Should handle fuzzy project name matching so the caller never needs to know a UUID. Callable from Claude Chat, a Slack message, or a mobile shortcut. Goal: eliminate the manual friction of opening Chronicle to log time after every session. Build in the same session as the Card Crafting Engine — same auth and routing pattern.
+
+---
+
 ## Enrichment Engine — Detail
 
 Three enrichment modes, all using Supabase Edge Functions + Claude API:
@@ -114,4 +122,4 @@ Three enrichment modes, all using Supabase Edge Functions + Claude API:
 
 ---
 
-*Last updated: 27 March 2026*
+*Last updated: 9 April 2026*
